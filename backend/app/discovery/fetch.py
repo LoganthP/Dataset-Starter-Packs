@@ -54,7 +54,7 @@ def headers_for(url: str, auth: dict | None = None) -> dict:
 
 
 def _http_error(exc: urllib.error.HTTPError, host: str) -> FetchError:
-    from .. import blob, kaggle_connect
+    from .. import kaggle_connect
 
     if host.endswith(".blob.vercel-storage.com"):
         if exc.code in (401, 403):
