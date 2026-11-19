@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-label="Dataset Starter Packs — ready-to-run NASA, UCI and Kaggle dataset projects">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef2ff"/>
+      <stop offset="0.5" stop-color="#f5f7ff"/>
+      <stop offset="1" stop-color="#eefbfb"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0" spreadMethod="reflect">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="0.5" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#0891b2"/>
+      <animateTransform attributeName="gradientTransform" type="translate" values="-0.5 0;0.5 0;-0.5 0" dur="9s" repeatCount="indefinite"/>
+    </linearGradient>
+    <linearGradient id="btn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="45"/></filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#4f46e5" flood-opacity="0.13"/>
+    </filter>
+    <clipPath id="card"><rect width="1200" height="360" rx="24"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="1200" height="360" fill="url(#bg)"/>
+
+    <!-- drifting colour blobs (same palette as the app's landing page) -->
+    <g filter="url(#blur)">
+      <circle cx="140" cy="60" r="130" fill="#a5b4fc" opacity="0.75">
+        <animate attributeName="cx" values="140;210;140" dur="14s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="60;100;60" dur="11s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="1090" cy="50" r="120" fill="#5eead4" opacity="0.6">
+        <animate attributeName="cx" values="1090;1010;1090" dur="13s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="170" cy="330" r="120" fill="#fde68a" opacity="0.75">
+        <animate attributeName="cy" values="330;290;330" dur="12s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="1030" cy="330" r="130" fill="#f9a8d4" opacity="0.55">
+        <animate attributeName="cx" values="1030;950;1030" dur="15s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- faint dotted grid -->
+    <g fill="#6366f1" opacity="0.10">
+      <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4"/></pattern>
+      <rect width="1200" height="360" fill="url(#dots)"/>
+    </g>
+
+    <!-- logo tile -->
+    <g transform="translate(546 34)" filter="url(#shadow)">
+      <rect width="108" height="40" rx="12" fill="#ffffff"/>
+      <g transform="translate(12 8)">
+        <rect width="24" height="24" rx="7" fill="url(#btn)"/>
+        <rect x="5" y="5" width="6" height="6" rx="1.5" fill="#fde68a"/>
+        <rect x="13" y="5" width="6" height="6" rx="1.5" fill="#f9a8d4"/>
+        <rect x="5" y="13" width="6" height="6" rx="1.5" fill="#5eead4"/>
+        <rect x="13" y="13" width="6" height="6" rx="1.5" fill="#ffffff"/>
+      </g>
+      <text x="44" y="26" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1e1b4b">v0.5.0</text>
+    </g>
+
+    <!-- title -->
+    <text x="600" y="140" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="62" font-weight="800" letter-spacing="-1.5" fill="url(#title)">Dataset Starter Packs</text>
+    <text x="600" y="180" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#475569">Describe your project · find a real dataset · run a working notebook · make it yours</text>
+
+    <!-- search bar with typing caret -->
+    <g transform="translate(330 208)" filter="url(#shadow)">
+      <rect width="540" height="52" rx="16" fill="#ffffff"/>
+      <circle cx="28" cy="25" r="7" fill="none" stroke="#64748b" stroke-width="2"/>
+      <line x1="33" y1="30" x2="38" y2="35" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+      <clipPath id="typeclip"><rect x="50" y="10" width="268" height="32">
+        <animate attributeName="width" values="0;268;268;0" keyTimes="0;0.45;0.85;1" dur="7s" repeatCount="indefinite"/>
+      </rect></clipPath>
+      <text x="52" y="32" clip-path="url(#typeclip)" font-family="Consolas, Menlo, monospace" font-size="15" fill="#1e293b">traffic incidents, lat/long, CSV</text>
+      <rect x="322" y="16" width="2" height="22" fill="#6366f1">
+        <animate attributeName="x" values="52;322;322;52" keyTimes="0;0.45;0.85;1" dur="7s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="440" y="8" width="90" height="36" rx="11" fill="url(#btn)"/>
+      <text x="485" y="31" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Search</text>
+    </g>
+
+    <!-- source chips -->
+    <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700">
+      <g transform="translate(408 290)">
+        <rect width="108" height="30" rx="15" fill="#ffffff" stroke="#c7d2fe"/>
+        <circle cx="18" cy="15" r="5" fill="#4f46e5"/>
+        <text x="30" y="20" fill="#3730a3">NASA</text>
+        <animateTransform attributeName="transform" type="translate" values="408 290;408 284;408 290" dur="4s" repeatCount="indefinite"/>
+      </g>
+      <g transform="translate(546 290)">
+        <rect width="108" height="30" rx="15" fill="#ffffff" stroke="#99f6e4"/>
+        <circle cx="18" cy="15" r="5" fill="#0d9488"/>
+        <text x="30" y="20" fill="#115e59">UCI</text>
+        <animateTransform attributeName="transform" type="translate" values="546 290;546 284;546 290" dur="4s" begin="0.7s" repeatCount="indefinite"/>
+      </g>
+      <g transform="translate(684 290)">
+        <rect width="108" height="30" rx="15" fill="#ffffff" stroke="#fbcfe8"/>
+        <circle cx="18" cy="15" r="5" fill="#db2777"/>
+        <text x="30" y="20" fill="#9d174d">Kaggle</text>
+        <animateTransform attributeName="transform" type="translate" values="684 290;684 284;684 290" dur="4s" begin="1.4s" repeatCount="indefinite"/>
+      </g>
+    </g>
+
+    <!-- left: animated bar chart card -->
+    <g transform="translate(60 120)" filter="url(#shadow)">
+      <rect width="170" height="130" rx="16" fill="#ffffff"/>
+      <text x="16" y="26" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#334155">Baseline vs model</text>
+      <line x1="16" y1="112" x2="154" y2="112" stroke="#e2e8f0"/>
+      <g>
+        <rect x="24" y="66" width="20" height="46" rx="4" fill="#c7d2fe"><animate attributeName="height" values="20;46;20" dur="3.2s" repeatCount="indefinite"/><animate attributeName="y" values="92;66;92" dur="3.2s" repeatCount="indefinite"/></rect>
+        <rect x="54" y="48" width="20" height="64" rx="4" fill="#818cf8"><animate attributeName="height" values="40;64;40" dur="3.2s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="y" values="72;48;72" dur="3.2s" begin="0.3s" repeatCount="indefinite"/></rect>
+        <rect x="84" y="56" width="20" height="56" rx="4" fill="#5eead4"><animate attributeName="height" values="30;56;30" dur="3.2s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="y" values="82;56;82" dur="3.2s" begin="0.6s" repeatCount="indefinite"/></rect>
+        <rect x="114" y="38" width="20" height="74" rx="4" fill="#f9a8d4"><animate attributeName="height" values="50;74;50" dur="3.2s" begin="0.9s" repeatCount="indefinite"/><animate attributeName="y" values="62;38;62" dur="3.2s" begin="0.9s" repeatCount="indefinite"/></rect>
+      </g>
+    </g>
+
+    <!-- right: notebook card with run progress -->
+    <g transform="translate(970 120)" filter="url(#shadow)">
+      <rect width="170" height="130" rx="16" fill="#ffffff"/>
+      <text x="16" y="26" font-family="Consolas, Menlo, monospace" font-size="12" font-weight="700" fill="#334155">starter.ipynb</text>
+      <g font-family="Consolas, Menlo, monospace" font-size="11" fill="#64748b">
+        <text x="16" y="50">[1] load_data()</text>
+        <text x="16" y="68">[2] validate()</text>
+        <text x="16" y="86">[3] baseline()</text>
+      </g>
+      <rect x="16" y="102" width="138" height="8" rx="4" fill="#eef2ff"/>
+      <rect x="16" y="102" width="138" height="8" rx="4" fill="url(#btn)">
+        <animate attributeName="width" values="0;138;138" keyTimes="0;0.8;1" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <circle cx="146" cy="22" r="5" fill="#10b981">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+</svg>
