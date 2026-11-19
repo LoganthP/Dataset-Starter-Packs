@@ -127,8 +127,8 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAccount();
 
-  // Redirect old /?q= links to /discover?q=
-  if (searchParams.has("q")) {
+  // Redirect old /?q= and query links to /discover
+  if (location.search && location.search !== "?") {
     return <Navigate to={`/discover${location.search}`} replace />;
   }
 
