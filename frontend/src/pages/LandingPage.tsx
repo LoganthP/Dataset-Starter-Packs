@@ -21,7 +21,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { ChartCard, Columns, RankedBars } from "../components/insights/Charts";
 import { Scatter } from "../components/insights/RelationCharts";
@@ -122,7 +122,6 @@ const CHIP_EXAMPLES = [
 
 // ---------------------------------------------------------------- MAIN COMPONENT
 export default function LandingPage() {
-  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAccount();
