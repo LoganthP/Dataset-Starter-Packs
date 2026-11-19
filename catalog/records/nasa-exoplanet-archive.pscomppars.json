@@ -1,0 +1,140 @@
+{
+  "id": "nasa-exoplanet-archive.pscomppars",
+  "packId": "nasa-exoplanets",
+  "title": "Planetary Systems Composite Parameters",
+  "description": "One composite row per confirmed exoplanet: discovery method and year, radius, orbital period, mass and distance. Queried live via TAP.",
+  "publisher": "NASA Exoplanet Archive (NExScI / Caltech-IPAC)",
+  "provider": "NASA Exoplanet Archive",
+  "providerId": "pscomppars",
+  "canonicalUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_about.html",
+  "sourceLinks": [
+    {
+      "label": "Table documentation",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_about.html"
+    },
+    {
+      "label": "DOI 10.26133/NEA13",
+      "url": "https://doi.org/10.26133/NEA13"
+    }
+  ],
+  "tags": [
+    "exoplanets",
+    "astronomy",
+    "planets",
+    "space",
+    "detection bias",
+    "nasa"
+  ],
+  "purposes": [
+    "exploratory",
+    "classification"
+  ],
+  "characteristics": [
+    "tabular"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "verified",
+    "evidence": "packs/nasa-exoplanets/load_data.py",
+    "note": "TAP returns CSV with format=csv."
+  },
+  "access": {
+    "method": "api",
+    "signInRequired": false,
+    "status": "verified",
+    "evidence": "packs/nasa-exoplanets/load_data.py"
+  },
+  "license": {
+    "name": "Acknowledge the archive and cite the DOI",
+    "url": "https://exoplanetarchive.ipac.caltech.edu/docs/acknowledge.html",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://exoplanetarchive.ipac.caltech.edu/docs/acknowledge.html",
+    "note": "Commercial-use terms were not reviewed."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "1992-01-01",
+      "end": null,
+      "ongoing": true,
+      "granularity": [
+        "static"
+      ],
+      "status": "unknown",
+      "evidence": null,
+      "note": "Discovery years span the 1990s to now; the exact first year was not checked."
+    },
+    "spatial": {
+      "scope": "not-applicable",
+      "regions": [],
+      "description": "Astronomical catalog",
+      "status": "verified",
+      "evidence": "packs/nasa-exoplanets/data-dictionary.md"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "pl_name",
+      "type": "str",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Planet name (primary key)",
+      "status": "verified"
+    },
+    {
+      "name": "discoverymethod",
+      "type": "str",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Discovery method",
+      "status": "verified"
+    },
+    {
+      "name": "disc_year",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Discovery year",
+      "status": "verified",
+      "unit": "year"
+    },
+    {
+      "name": "pl_rade",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Planet radius - often missing",
+      "status": "verified",
+      "unit": "Earth radii"
+    },
+    {
+      "name": "pl_orbper",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Orbital period",
+      "status": "verified",
+      "unit": "days"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "~6,000 planets; grows weekly"
+  },
+  "limitations": [
+    "Detections, not a census - strong selection bias",
+    "Composite rows mix references"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "pack",
+  "reviewStatus": "reviewed"
+}

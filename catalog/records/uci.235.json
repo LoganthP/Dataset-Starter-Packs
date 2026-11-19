@@ -1,0 +1,148 @@
+{
+  "id": "uci.235",
+  "title": "Individual Household Electric Power Consumption",
+  "description": "Minute-level electric power measurements from one household near Paris, December 2006 to November 2010, with sub-metering.",
+  "publisher": "UCI Machine Learning Repository",
+  "provider": "UCI",
+  "providerId": "235",
+  "canonicalUrl": "https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption",
+  "sourceLinks": [
+    {
+      "label": "UCI dataset page",
+      "url": "https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption"
+    },
+    {
+      "label": "UCI API metadata",
+      "url": "https://archive.ics.uci.edu/api/dataset?id=235"
+    }
+  ],
+  "tags": [
+    "energy",
+    "electricity",
+    "power consumption",
+    "household",
+    "smart meter",
+    "time series",
+    "france"
+  ],
+  "purposes": [
+    "forecasting",
+    "regression"
+  ],
+  "characteristics": [
+    "tabular",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/api/dataset?id=235",
+    "note": "Semicolon-separated text with a CSV export."
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+  },
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "commercialUse": "allowed",
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption"
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2006-12-01",
+      "end": "2010-11-30",
+      "ongoing": false,
+      "granularity": [
+        "minute"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    },
+    "spatial": {
+      "scope": "point-station",
+      "regions": [
+        "france"
+      ],
+      "description": "One household in Sceaux, near Paris",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "Date",
+      "type": "Date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "dd/mm/yyyy",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    },
+    {
+      "name": "Time",
+      "type": "Categorical",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "hh:mm:ss",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    },
+    {
+      "name": "Global_active_power",
+      "type": "Continuous",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Minute-averaged active power",
+      "status": "provider-reported",
+      "unit": "kW",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    },
+    {
+      "name": "Voltage",
+      "type": "Continuous",
+      "concepts": [],
+      "level": "record",
+      "description": "Minute-averaged voltage",
+      "status": "provider-reported",
+      "unit": "V",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    },
+    {
+      "name": "Sub_metering_3",
+      "type": "Continuous",
+      "concepts": [],
+      "level": "record",
+      "description": "Water heater and air conditioner",
+      "status": "provider-reported",
+      "unit": "Wh",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=235"
+    }
+  ],
+  "size": {
+    "rows": 2075259,
+    "bytes": 126800000,
+    "note": "126.8 MB text; 19.7 MB zip"
+  },
+  "limitations": [
+    "One household",
+    "About 1.25% of rows have missing values"
+  ],
+  "sourceUpdatedAt": "2024-03-08",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

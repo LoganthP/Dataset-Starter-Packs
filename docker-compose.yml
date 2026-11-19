@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dataset-starter-packs
+    ports:
+      - "8000:8000"
+    environment:
+      - DSP_REPO_ROOT=/app
+      - DSP_STATE_DIR=/app/backend/.state
+      - DSP_MAX_PARALLEL_RUNS=2
+    volumes:
+      - dsp_state:/app/backend/.state
+
+volumes:
+  dsp_state:

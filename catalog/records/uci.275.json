@@ -1,0 +1,159 @@
+{
+  "id": "uci.275",
+  "packId": "uci-bike-demand",
+  "title": "Bike Sharing (hourly)",
+  "description": "Hourly rental counts from Capital Bikeshare in Washington D.C. with calendar and observed weather, 2011-2012.",
+  "publisher": "UCI Machine Learning Repository (Fanaee-T, 2013)",
+  "provider": "UCI",
+  "providerId": "275",
+  "canonicalUrl": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset",
+  "sourceLinks": [
+    {
+      "label": "UCI dataset page",
+      "url": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset"
+    },
+    {
+      "label": "Direct download (ZIP)",
+      "url": "https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip"
+    }
+  ],
+  "tags": [
+    "bike sharing",
+    "bicycle",
+    "demand",
+    "mobility",
+    "transport",
+    "rentals",
+    "weather"
+  ],
+  "purposes": [
+    "forecasting",
+    "regression"
+  ],
+  "characteristics": [
+    "tabular",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "verified",
+    "evidence": "packs/uci-bike-demand/load_data.py"
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "verified",
+    "evidence": "packs/uci-bike-demand/load_data.py",
+    "note": "Downloaded and checksummed by the pack loader."
+  },
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "commercialUse": "allowed",
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset"
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2011-01-01",
+      "end": "2012-12-31",
+      "ongoing": false,
+      "granularity": [
+        "hourly"
+      ],
+      "status": "verified",
+      "evidence": "packs/uci-bike-demand/data-dictionary.md"
+    },
+    "spatial": {
+      "scope": "city",
+      "regions": [
+        "washington-dc",
+        "united-states"
+      ],
+      "description": "Washington D.C. (one bike-share system)",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "dteday",
+      "type": "date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Date; combined with hr gives the hour",
+      "status": "verified"
+    },
+    {
+      "name": "hr",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Hour of day",
+      "status": "verified",
+      "unit": "hour 0-23"
+    },
+    {
+      "name": "temp",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Observed temperature, normalised",
+      "status": "verified",
+      "unit": "°C / 41"
+    },
+    {
+      "name": "weathersit",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Observed weather category 1-4",
+      "status": "verified"
+    },
+    {
+      "name": "casual",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Casual rentals - component of the target, exclude",
+      "status": "verified"
+    },
+    {
+      "name": "registered",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Registered rentals - component of the target, exclude",
+      "status": "verified"
+    },
+    {
+      "name": "cnt",
+      "type": "int",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Total rentals per hour (target)",
+      "status": "verified"
+    }
+  ],
+  "size": {
+    "rows": 17379,
+    "bytes": null,
+    "note": "ZIP ~280 KB"
+  },
+  "limitations": [
+    "Two years, one city",
+    "Weather is observed, not forecast",
+    "Some hours are missing from the file"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "pack",
+  "reviewStatus": "reviewed"
+}

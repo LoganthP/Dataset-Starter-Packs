@@ -1,0 +1,135 @@
+{
+  "id": "kaggle.olistbr-brazilian-ecommerce",
+  "packId": "kaggle-olist-delivery",
+  "title": "Brazilian E-Commerce Public Dataset by Olist",
+  "description": "~100k anonymised orders (2016-2018) across orders, items, reviews, customers, sellers and payments tables.",
+  "publisher": "Olist (via Kaggle)",
+  "provider": "Kaggle",
+  "providerId": "olistbr/brazilian-ecommerce",
+  "canonicalUrl": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+  "sourceLinks": [
+    {
+      "label": "Kaggle dataset page",
+      "url": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce"
+    }
+  ],
+  "tags": [
+    "e-commerce",
+    "ecommerce",
+    "orders",
+    "retail",
+    "delivery",
+    "logistics",
+    "reviews",
+    "sql",
+    "brazil"
+  ],
+  "purposes": [
+    "sql-analytics",
+    "exploratory"
+  ],
+  "characteristics": [
+    "tabular",
+    "relational"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "verified",
+    "evidence": "packs/kaggle-olist-delivery/load_data.py"
+  },
+  "access": {
+    "method": "sign-in",
+    "signInRequired": true,
+    "status": "verified",
+    "evidence": "packs/kaggle-olist-delivery/README.md",
+    "note": "Free Kaggle account; download archive.zip."
+  },
+  "license": {
+    "name": "CC BY-NC-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "commercialUse": "not-allowed",
+    "status": "provider-reported",
+    "evidence": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce"
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2016-09-01",
+      "end": "2018-10-31",
+      "ongoing": false,
+      "granularity": [
+        "event"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+      "note": "Orders placed 2016-2018; edges are sparse."
+    },
+    "spatial": {
+      "scope": "country",
+      "regions": [
+        "brazil"
+      ],
+      "description": "Brazil",
+      "status": "provider-reported",
+      "evidence": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "order_id",
+      "type": "str",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Joins orders, items and reviews",
+      "status": "verified"
+    },
+    {
+      "name": "order_purchase_timestamp",
+      "type": "timestamp",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "When the order was placed",
+      "status": "verified"
+    },
+    {
+      "name": "order_delivered_customer_date",
+      "type": "timestamp",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Delivery time (empty unless delivered)",
+      "status": "verified"
+    },
+    {
+      "name": "review_score",
+      "type": "int",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "1-5 stars",
+      "status": "verified"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "ZIP ~45 MB, 9 CSV files"
+  },
+  "limitations": [
+    "Non-commercial license",
+    "Anonymised",
+    "Reviews can repeat per order"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "pack",
+  "reviewStatus": "reviewed"
+}

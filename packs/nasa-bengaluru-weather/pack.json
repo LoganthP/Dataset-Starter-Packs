@@ -1,0 +1,51 @@
+{
+  "slug": "nasa-bengaluru-weather",
+  "title": "Bengaluru Weather Explorer",
+  "tagline": "Pull daily NASA POWER weather from a live API, chart the monsoon, and set a next-day forecast baseline.",
+  "provider": "NASA",
+  "difficulty": "beginner",
+  "task_type": "Time series · live API",
+  "skills": ["REST API", "JSON parsing", "missing values", "resampling", "baselines"],
+  "accent": "#0EA5E9",
+  "question": "What does a decade of Bengaluru weather look like, and how hard is tomorrow's temperature to predict?",
+  "audience": "Beginners who want to work with a real scientific API instead of a static CSV.",
+  "prerequisites": ["Python 3.12", "Basic pandas"],
+  "estimated_time": "40 minutes",
+  "expected_runtime": {"sample": "~5 seconds", "real": "~20 seconds per city (API call)"},
+  "source": {
+    "name": "NASA POWER Daily API",
+    "publisher": "NASA Langley Research Center - POWER Project",
+    "url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+    "dataset_page": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+    "health_check_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=77.5946&latitude=12.9716&start=20240101&end=20240107&format=JSON",
+    "health_check_expect": ["properties", "parameter", "T2M"],
+    "access_method": "api",
+    "license": "NASA open data - no restrictions; acknowledgement requested",
+    "license_url": "https://power.larc.nasa.gov/docs/referencing/",
+    "doi": null,
+    "citation": "Data obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program.",
+    "files": ["power_<city>_<start>_<end>.json"],
+    "requires_credentials": false
+  },
+  "fixture": true,
+  "last_source_check": "2026-11-18",
+  "lesson": {
+    "title": "-999 is not a temperature",
+    "summary": "POWER marks missing values with a fill value (-999). Left alone it drags monthly means toward absurd numbers. POWER values are also gridded estimates for the requested coordinates, so record lat/lon, units and the time standard with every chart."
+  },
+  "outputs": ["Monthly temperature chart", "Monthly precipitation chart", "Missing-data summary", "City comparison", "Next-day baselines"],
+  "parameters": [
+    {"name": "city", "label": "City", "type": "select", "default": "bengaluru",
+     "options": ["bengaluru", "chennai", "mysuru", "hyderabad", "mumbai", "delhi"], "help": "Sample mode includes Bengaluru and Chennai only."},
+    {"name": "compare_city", "label": "Compare with", "type": "select", "default": "chennai",
+     "options": ["none", "bengaluru", "chennai", "mysuru", "hyderabad", "mumbai", "delhi"], "help": "Same method and date range for a second location."},
+    {"name": "start", "label": "Start date", "type": "date", "default": "2015-01-01", "modes": ["real"], "help": "Real mode only. POWER starts 1981-01-01."},
+    {"name": "end", "label": "End date", "type": "date", "default": "2024-12-31", "modes": ["real"], "help": "Real mode only."}
+  ],
+  "challenges": [
+    {"title": "Bengaluru vs. Chennai", "description": "Run real mode with compare_city=chennai for the same date range.", "outcome": "A comparison chart and one paragraph on the two monsoon regimes."},
+    {"title": "Beat the baselines", "description": "Predict tomorrow's T2M with a linear model on recent days + day-of-year terms.", "outcome": "Holdout MAE lower than both persistence and climatology."},
+    {"title": "Warming trend", "description": "Fetch 1985-2024 and fit a trend line to annual mean T2M.", "outcome": "Trend in °C/decade with an honest caveat about gridded data."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

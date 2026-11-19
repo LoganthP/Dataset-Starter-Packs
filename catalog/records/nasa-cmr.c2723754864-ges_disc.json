@@ -1,0 +1,134 @@
+{
+  "id": "nasa-cmr.c2723754864-ges_disc",
+  "title": "GPM IMERG Final Precipitation L3 1 day 0.1° V07",
+  "description": "Global daily precipitation estimates on a 0.1° grid from merged satellite microwave/infrared retrievals and gauges.",
+  "publisher": "NASA GES DISC",
+  "provider": "NASA Earthdata (CMR)",
+  "providerId": "C2723754864-GES_DISC",
+  "canonicalUrl": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gpm-3imergdf-07",
+  "sourceLinks": [
+    {
+      "label": "Earthdata catalog page",
+      "url": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gpm-3imergdf-07"
+    },
+    {
+      "label": "CMR metadata",
+      "url": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+    },
+    {
+      "label": "DOI 10.5067/GPM/IMERGDF/DAY/07",
+      "url": "https://doi.org/10.5067/GPM/IMERGDF/DAY/07"
+    }
+  ],
+  "tags": [
+    "precipitation",
+    "rainfall",
+    "weather",
+    "climate",
+    "satellite",
+    "gpm",
+    "imerg",
+    "monsoon"
+  ],
+  "purposes": [
+    "exploratory",
+    "geospatial",
+    "forecasting"
+  ],
+  "characteristics": [
+    "geospatial",
+    "time-series",
+    "gridded"
+  ],
+  "formats": {
+    "values": [
+      "netcdf"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": null,
+    "status": "unknown",
+    "evidence": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gpm-3imergdf-07",
+    "note": "Whether an Earthdata Login is required was not confirmed."
+  },
+  "license": {
+    "name": "NASA EOSDIS data use and citation guidance",
+    "url": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gpm-3imergdf-07",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF",
+    "note": "UseConstraints point to citation guidance; no explicit license."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "1998-01-01",
+      "end": "2025-09-30",
+      "ongoing": false,
+      "granularity": [
+        "daily"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+    },
+    "spatial": {
+      "scope": "global-grid",
+      "regions": [
+        "global"
+      ],
+      "description": "Global, 0.1° × 0.1°",
+      "status": "provider-reported",
+      "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "precipitation",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Daily mean precipitation rate (combined retrieval)",
+      "status": "provider-reported",
+      "unit": "mm/day",
+      "evidence": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gpm-3imergdf-07"
+    },
+    {
+      "name": "lat / lon",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "grid",
+      "description": "Grid-cell coordinates, not events",
+      "status": "provider-reported",
+      "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+    },
+    {
+      "name": "time",
+      "type": "date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Day",
+      "status": "provider-reported",
+      "evidence": "https://cmr.earthdata.nasa.gov/search/collections.umm_json?short_name=GPM_3IMERGDF"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "~12 MB per daily NetCDF file"
+  },
+  "limitations": [
+    "NetCDF grids need xarray or similar",
+    "Satellite estimate, not gauge data"
+  ],
+  "sourceUpdatedAt": "2026-11-17",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

@@ -1,0 +1,154 @@
+{
+  "id": "kaggle.sobhanmoosavi-us-accidents",
+  "title": "US Accidents (2016 - 2023)",
+  "description": "About 7.7 million traffic incident records from 49 US states, collected from traffic-event APIs, with start time, GPS coordinates, severity and weather.",
+  "publisher": "Sobhan Moosavi et al. (via Kaggle)",
+  "provider": "Kaggle",
+  "providerId": "sobhanmoosavi/us-accidents",
+  "canonicalUrl": "https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents",
+  "sourceLinks": [
+    {
+      "label": "Kaggle dataset page",
+      "url": "https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents"
+    },
+    {
+      "label": "Author's dataset page",
+      "url": "https://smoosavi.org/datasets/us_accidents"
+    }
+  ],
+  "tags": [
+    "traffic",
+    "accidents",
+    "incidents",
+    "crashes",
+    "road safety",
+    "united states",
+    "weather",
+    "severity"
+  ],
+  "purposes": [
+    "geospatial",
+    "classification",
+    "forecasting",
+    "exploratory"
+  ],
+  "characteristics": [
+    "tabular",
+    "geospatial",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents"
+  },
+  "access": {
+    "method": "sign-in",
+    "signInRequired": true,
+    "status": "provider-reported",
+    "evidence": "https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents",
+    "note": "Kaggle account needed to download."
+  },
+  "license": {
+    "name": "CC BY-NC-SA 4.0 (research use)",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "commercialUse": "not-allowed",
+    "status": "provider-reported",
+    "evidence": "https://smoosavi.org/datasets/us_accidents",
+    "note": "Distributed for research purposes only."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2016-02-01",
+      "end": "2023-03-31",
+      "ongoing": false,
+      "granularity": [
+        "event"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents",
+      "note": "Kaggle title says 2016-2023; month bounds from published analyses of the current version."
+    },
+    "spatial": {
+      "scope": "country",
+      "regions": [
+        "united-states"
+      ],
+      "description": "49 US states",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "Start_Time",
+      "type": "datetime",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Start time of the accident, local time zone",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    },
+    {
+      "name": "Start_Lat",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "GPS latitude of the start point",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    },
+    {
+      "name": "Start_Lng",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "GPS longitude of the start point",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    },
+    {
+      "name": "Severity",
+      "type": "int",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Impact on traffic, 1-4",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    },
+    {
+      "name": "Weather_Condition",
+      "type": "str",
+      "concepts": [],
+      "level": "record",
+      "description": "Weather at the time",
+      "status": "provider-reported",
+      "evidence": "https://smoosavi.org/datasets/us_accidents"
+    }
+  ],
+  "size": {
+    "rows": 7700000,
+    "bytes": null,
+    "note": "~3 GB CSV"
+  },
+  "limitations": [
+    "Non-commercial, research-only license",
+    "Collected from traffic APIs, not police reports",
+    "Coverage varies by state and year"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

@@ -1,0 +1,26 @@
+# Downloaded data, caches and generated output stay local
+packs/*/data/
+packs/*/outputs/
+dist/
+backend/.state/
+backend/tests/.state-test/
+backend/tests/.state-discovery/
+backend/tests/.state-live/
+backend/.env
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+# Node
+frontend/node_modules/
+frontend/dist/
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tsbuildinfo

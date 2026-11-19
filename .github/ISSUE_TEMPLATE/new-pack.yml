@@ -1,0 +1,20 @@
+name: Propose a new pack
+description: Suggest a dataset and the project a student could build with it
+labels: [new-pack]
+body:
+  - type: input
+    id: dataset
+    attributes: { label: Dataset and official URL }
+    validations: { required: true }
+  - type: input
+    id: license
+    attributes: { label: License or terms of use }
+    validations: { required: true }
+  - type: textarea
+    id: question
+    attributes: { label: The one question the pack answers }
+    validations: { required: true }
+  - type: textarea
+    id: trap
+    attributes: { label: The dataset's biggest technical trap, description: "Leakage, a fill value, grain, bias, ..." }
+    validations: { required: true }

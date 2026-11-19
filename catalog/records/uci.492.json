@@ -1,0 +1,145 @@
+{
+  "id": "uci.492",
+  "title": "Metro Interstate Traffic Volume",
+  "description": "Hourly westbound traffic volume on I-94 (Minneapolis-St. Paul) with weather and holiday features, 2012-2018.",
+  "publisher": "UCI Machine Learning Repository",
+  "provider": "UCI",
+  "providerId": "492",
+  "canonicalUrl": "https://archive.ics.uci.edu/dataset/492/metro+interstate+traffic+volume",
+  "sourceLinks": [
+    {
+      "label": "UCI dataset page",
+      "url": "https://archive.ics.uci.edu/dataset/492/metro+interstate+traffic+volume"
+    },
+    {
+      "label": "UCI API metadata",
+      "url": "https://archive.ics.uci.edu/api/dataset?id=492"
+    }
+  ],
+  "tags": [
+    "traffic",
+    "traffic volume",
+    "highway",
+    "weather",
+    "holidays",
+    "minnesota",
+    "time series"
+  ],
+  "purposes": [
+    "forecasting",
+    "regression"
+  ],
+  "characteristics": [
+    "tabular",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+  },
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "commercialUse": "allowed",
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/492/metro+interstate+traffic+volume"
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2012-01-01",
+      "end": "2018-12-31",
+      "ongoing": false,
+      "granularity": [
+        "hourly"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492",
+      "note": "Abstract states 2012-2018."
+    },
+    "spatial": {
+      "scope": "point-station",
+      "regions": [
+        "minnesota",
+        "united-states"
+      ],
+      "description": "One traffic counter (ATR 301) on I-94",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "date_time",
+      "type": "Date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Hour of data collection, local CST",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    },
+    {
+      "name": "temp",
+      "type": "Continuous",
+      "concepts": [],
+      "level": "record",
+      "description": "Average temperature",
+      "status": "provider-reported",
+      "unit": "Kelvin",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    },
+    {
+      "name": "rain_1h",
+      "type": "Continuous",
+      "concepts": [],
+      "level": "record",
+      "description": "Rain in the hour",
+      "status": "provider-reported",
+      "unit": "mm",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    },
+    {
+      "name": "holiday",
+      "type": "Categorical",
+      "concepts": [],
+      "level": "record",
+      "description": "US national/regional holidays",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    },
+    {
+      "name": "traffic_volume",
+      "type": "Integer",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Hourly westbound volume at ATR station 301",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=492"
+    }
+  ],
+  "size": {
+    "rows": 48204,
+    "bytes": 405400,
+    "note": "396 KB gzip"
+  },
+  "limitations": [
+    "Aggregate volume at one counter - no individual incidents or coordinates"
+  ],
+  "sourceUpdatedAt": "2024-03-15",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

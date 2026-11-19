@@ -1,0 +1,153 @@
+{
+  "id": "snap.soc-reddithyperlinks",
+  "title": "Reddit Hyperlink Network (subreddit-to-subreddit links)",
+  "description": "858,490 timestamped hyperlinks between 55,863 subreddits (Jan 2014 - Apr 2017), each with a negative/neutral label and 86 text properties of the source post.",
+  "publisher": "Stanford SNAP (Kumar, Hamilton, Leskovec & Jurafsky, WWW 2018)",
+  "provider": "Stanford SNAP",
+  "providerId": "soc-RedditHyperlinks",
+  "canonicalUrl": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html",
+  "sourceLinks": [
+    {
+      "label": "SNAP dataset page",
+      "url": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    }
+  ],
+  "unitOfAnalysis": "One hyperlink from a post in a source subreddit to a target subreddit - a link between communities, not an individual post or user.",
+  "tags": [
+    "social media",
+    "reddit",
+    "subreddits",
+    "social network",
+    "graph",
+    "conflict",
+    "sentiment",
+    "temporal network"
+  ],
+  "purposes": [
+    "exploratory",
+    "classification"
+  ],
+  "characteristics": [
+    "tabular",
+    "time-series",
+    "graph"
+  ],
+  "formats": {
+    "values": [
+      "tsv"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html",
+    "note": "Two TSV files: links in post bodies and links in post titles."
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+  },
+  "license": {
+    "name": null,
+    "url": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html",
+    "note": "Terms were not reviewed; cite the WWW 2018 paper."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2014-01-01",
+      "end": "2017-04-30",
+      "ongoing": false,
+      "granularity": [
+        "event"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    "spatial": {
+      "scope": "not-applicable",
+      "regions": [],
+      "description": "Online communities (Reddit)",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "SOURCE_SUBREDDIT",
+      "type": "str",
+      "concepts": [],
+      "level": "record",
+      "description": "Subreddit the link comes from",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    {
+      "name": "TARGET_SUBREDDIT",
+      "type": "str",
+      "concepts": [],
+      "level": "record",
+      "description": "Subreddit the link points to",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    {
+      "name": "POST_ID",
+      "type": "str",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Post containing the link",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    {
+      "name": "TIMESTAMP",
+      "type": "datetime",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "When the post was made",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    {
+      "name": "POST_LABEL",
+      "type": "int",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "-1 negative toward target, 1 neutral/positive",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    },
+    {
+      "name": "POST_PROPERTIES",
+      "type": "vector",
+      "concepts": [],
+      "level": "record",
+      "description": "86 numeric text features (length, readability, VADER, LIWC)",
+      "status": "provider-reported",
+      "evidence": "https://snap.stanford.edu/data/soc-RedditHyperlinks.html"
+    }
+  ],
+  "size": {
+    "rows": 858490,
+    "bytes": null,
+    "note": "Edges across the body and title files"
+  },
+  "limitations": [
+    "Unit is a link between communities",
+    "Sentiment label is model-derived",
+    "Ends April 2017"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

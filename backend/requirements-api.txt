@@ -1,0 +1,14 @@
+# Runtime for the web app and API only (Docker, Vercel). Starter-pack runs also need requirements-packs.txt.
+fastapi==0.163.2
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+pandas==3.0.5
+duckdb==2.0.0
+openpyxl==3.1.5
+nbformat==5.11.1
+# Image headers and previews, credential encryption, Unix-compress (.Z) SINEX files
+pillow==12.3.0
+cryptography==50.0.1
+unlzw3==0.2.3
+# Durable storage when DATABASE_URL points at Postgres (Neon on Vercel, or any Postgres)
+psycopg[binary]==3.3.9

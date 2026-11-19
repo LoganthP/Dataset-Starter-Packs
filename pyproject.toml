@@ -1,0 +1,35 @@
+# The Python project for deployment platforms (Vercel reads [project] and [tool.vercel]).
+# Local development uses backend/requirements.txt; Docker uses backend/requirements-api.txt + requirements-packs.txt.
+[project]
+name = "dataset-starter-packs"
+version = "0.5.0"
+description = "Find a dataset by describing your project, analyze it, and start from curated starter packs."
+requires-python = ">=3.12"
+# Keep in sync with backend/requirements-api.txt (starter-pack runs are off on Vercel, so their ML stack isn't bundled).
+dependencies = [
+  "fastapi==0.163.2",
+  "python-multipart==0.0.32",
+  "pandas==3.0.5",
+  "duckdb==2.0.0",
+  "openpyxl==3.1.5",
+  "nbformat==5.11.1",
+  "pillow==12.3.0",
+  "cryptography==50.0.1",
+  "unlzw3==0.2.3",
+  "psycopg[binary]==3.3.9",
+]
+
+[tool.vercel]
+entrypoint = "backend.app.main:app"
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = ["frontend", "pack-template", "*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B008", "B905"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "load_data", "analysis"]

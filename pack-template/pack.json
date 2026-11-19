@@ -1,0 +1,38 @@
+{
+  "slug": "provider-short-name",
+  "title": "Human Title",
+  "tagline": "One sentence: what you build and the twist that makes it worth saving.",
+  "provider": "UCI",
+  "difficulty": "beginner",
+  "task_type": "Regression",
+  "skills": ["pandas", "one skill per trap"],
+  "accent": "#7C83FD",
+  "question": "The single question this pack answers?",
+  "audience": "Who this is for.",
+  "prerequisites": ["Python 3.12"],
+  "estimated_time": "45 minutes",
+  "expected_runtime": {"sample": "~5 seconds", "real": "~30 seconds"},
+  "source": {
+    "name": "Dataset name",
+    "publisher": "Who publishes it",
+    "url": "https://example.org/download.zip",
+    "dataset_page": "https://example.org/dataset",
+    "access_method": "direct-download",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "doi": null,
+    "citation": "How to cite it.",
+    "files": ["data.csv"],
+    "requires_credentials": false
+  },
+  "fixture": true,
+  "last_source_check": "YYYY-MM-DD",
+  "lesson": {"title": "The trap in five words", "summary": "Two sentences on the mistake and how the pack avoids it."},
+  "outputs": ["Chart one", "Baseline vs. model"],
+  "parameters": [],
+  "challenges": [
+    {"title": "Challenge", "description": "What to try.", "outcome": "What you can show when it's done."},
+    {"title": "Challenge", "description": "What to try.", "outcome": "What you can show when it's done."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

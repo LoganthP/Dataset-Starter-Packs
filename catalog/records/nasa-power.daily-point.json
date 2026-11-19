@@ -1,0 +1,149 @@
+{
+  "id": "nasa-power.daily-point",
+  "packId": "nasa-bengaluru-weather",
+  "title": "NASA POWER Daily API (point)",
+  "description": "Daily gridded meteorology (temperature, precipitation, humidity and more) for any latitude/longitude you request, from 1981.",
+  "publisher": "NASA Langley Research Center - POWER Project",
+  "provider": "NASA POWER",
+  "providerId": "temporal/daily/point",
+  "canonicalUrl": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+  "sourceLinks": [
+    {
+      "label": "API documentation",
+      "url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/"
+    },
+    {
+      "label": "Referencing POWER",
+      "url": "https://power.larc.nasa.gov/docs/referencing/"
+    }
+  ],
+  "tags": [
+    "weather",
+    "climate",
+    "temperature",
+    "precipitation",
+    "rainfall",
+    "humidity",
+    "meteorology",
+    "solar"
+  ],
+  "purposes": [
+    "forecasting",
+    "exploratory"
+  ],
+  "characteristics": [
+    "time-series",
+    "geospatial"
+  ],
+  "formats": {
+    "values": [
+      "json"
+    ],
+    "exhaustive": false,
+    "status": "verified",
+    "evidence": "packs/nasa-bengaluru-weather/load_data.py",
+    "note": "The pack requests JSON. Other output formats were not checked."
+  },
+  "access": {
+    "method": "api",
+    "signInRequired": false,
+    "status": "verified",
+    "evidence": "packs/nasa-bengaluru-weather/load_data.py",
+    "note": "No API key needed."
+  },
+  "license": {
+    "name": "NASA open data; acknowledgement requested",
+    "url": "https://power.larc.nasa.gov/docs/referencing/",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://power.larc.nasa.gov/docs/referencing/",
+    "note": "Acknowledgement is requested; commercial-use terms were not reviewed."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "1981-01-01",
+      "end": null,
+      "ongoing": true,
+      "granularity": [
+        "daily"
+      ],
+      "dependsOnRequest": true,
+      "status": "verified",
+      "evidence": "packs/nasa-bengaluru-weather/load_data.py",
+      "note": "You choose the date range; meteorology starts 1981-01-01."
+    },
+    "spatial": {
+      "scope": "global-point-query",
+      "regions": [
+        "global"
+      ],
+      "description": "Any coordinates; values are gridded estimates for the cell containing the point",
+      "status": "verified",
+      "evidence": "packs/nasa-bengaluru-weather/data-dictionary.md"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "latitude / longitude",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "input",
+      "description": "Request parameters - each response is one grid point, not located events",
+      "status": "verified"
+    },
+    {
+      "name": "date (YYYYMMDD keys)",
+      "type": "date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Day the values describe",
+      "status": "verified"
+    },
+    {
+      "name": "T2M",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Mean air temperature at 2 m",
+      "status": "verified",
+      "unit": "°C"
+    },
+    {
+      "name": "PRECTOTCORR",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Bias-corrected precipitation",
+      "status": "verified",
+      "unit": "mm/day"
+    },
+    {
+      "name": "RH2M",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Relative humidity at 2 m",
+      "status": "verified",
+      "unit": "%"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "One row per requested day"
+  },
+  "limitations": [
+    "Gridded estimate - one cell covers a whole city",
+    "Missing values arrive as -999",
+    "Recent days can be revised"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "pack",
+  "reviewStatus": "reviewed"
+}

@@ -1,0 +1,8 @@
+# Full local environment: API + starter-pack runs + notebooks + tests.
+-r requirements-api.txt
+-r requirements-packs.txt
+jupyterlab==4.6.6
+nbconvert==7.17.2
+pytest==9.1.1
+httpx>=0.27
+ruff>=0.6

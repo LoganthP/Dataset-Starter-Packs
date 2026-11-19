@@ -1,0 +1,54 @@
+{
+  "_comment": "Purpose-based search tasks. expect_top5: at least one must rank in the top 5 (meets first, then needs-verification). expect_group pins where a record must land. never_meets: tempting results that must not appear as confirmed matches.",
+  "queries": [
+    {
+      "id": "routewatch",
+      "q": "I need traffic incident data for RouteWatch. It should have latitude, longitude, and timestamps, cover at least one year, and be available as CSV.",
+      "expect_top5": ["dft.road-safety-collisions", "socrata-chicago.85ca-t3if", "kaggle.sobhanmoosavi-us-accidents", "socrata-nyc.h9gi-nx95"],
+      "expect_group": {"socrata-nyc.h9gi-nx95": "needs-verification", "socrata-chicago.85ca-t3if": "meets"},
+      "never_meets": ["uci.492", "nasa-power.daily-point", "uci.275"]
+    },
+    {
+      "id": "traffic-latlon",
+      "q": "Traffic incidents with latitude, longitude, and timestamps",
+      "expect_top5": ["socrata-nyc.h9gi-nx95", "socrata-chicago.85ca-t3if", "dft.road-safety-collisions", "kaggle.sobhanmoosavi-us-accidents"],
+      "expect_group": {"uci.492": "does-not-meet"},
+      "never_meets": ["uci.492", "nasa-power.daily-point", "open-meteo.historical-weather"]
+    },
+    {
+      "id": "bengaluru-weather",
+      "q": "Daily weather for Bengaluru over 10 years",
+      "expect_top5": ["nasa-power.daily-point", "open-meteo.historical-weather"],
+      "expect_group": {"nasa-power.daily-point": "meets"},
+      "never_meets": ["uci.360", "uci.492", "uci.275"]
+    },
+    {
+      "id": "beginner-forecasting",
+      "q": "Beginner forecasting project with an offline sample",
+      "expect_top5": ["uci.275"],
+      "expect_group": {"uci.275": "meets"},
+      "never_meets": []
+    },
+    {
+      "id": "commercial-csv",
+      "q": "CSV suitable for commercial reuse",
+      "expect_top5": ["uci.492", "dft.road-safety-collisions", "uci.275"],
+      "expect_group": {"socrata-nyc.h9gi-nx95": "needs-verification", "uci.360": "does-not-meet"},
+      "never_meets": ["uci.360", "kaggle.sobhanmoosavi-us-accidents", "kaggle.olistbr-brazilian-ecommerce", "socrata-nyc.h9gi-nx95", "open-meteo.historical-weather"]
+    },
+    {
+      "id": "bike-forecasting",
+      "q": "bike demand forecasting",
+      "expect_top5": ["uci.275"],
+      "expect_group": {},
+      "never_meets": []
+    },
+    {
+      "id": "sql-joins",
+      "q": "SQL analytics practice with orders and joins",
+      "expect_top5": ["kaggle.olistbr-brazilian-ecommerce"],
+      "expect_group": {},
+      "never_meets": []
+    }
+  ]
+}

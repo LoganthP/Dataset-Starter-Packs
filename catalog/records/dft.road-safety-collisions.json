@@ -1,0 +1,164 @@
+{
+  "id": "dft.road-safety-collisions",
+  "title": "Road Safety Data - Collisions (Great Britain, STATS19)",
+  "description": "Police-reported personal-injury road collisions in Great Britain since 1979, one row per collision with date, time, coordinates and conditions.",
+  "publisher": "Department for Transport (UK)",
+  "provider": "GOV.UK",
+  "providerId": "road-safety-open-data/collision",
+  "canonicalUrl": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data",
+  "sourceLinks": [
+    {
+      "label": "GOV.UK data page",
+      "url": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data"
+    },
+    {
+      "label": "Column list (stats19 R package docs)",
+      "url": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    }
+  ],
+  "tags": [
+    "traffic",
+    "road safety",
+    "collisions",
+    "crashes",
+    "accidents",
+    "incidents",
+    "united kingdom",
+    "stats19"
+  ],
+  "purposes": [
+    "geospatial",
+    "classification",
+    "forecasting",
+    "exploratory"
+  ],
+  "characteristics": [
+    "tabular",
+    "geospatial",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data"
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data"
+  },
+  "license": {
+    "name": "Open Government Licence v3.0",
+    "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "commercialUse": "allowed",
+    "status": "provider-reported",
+    "evidence": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data"
+  },
+  "coverage": {
+    "temporal": {
+      "start": "1979-01-01",
+      "end": "2025-12-31",
+      "ongoing": true,
+      "granularity": [
+        "event"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data",
+      "note": "1979 to the latest published year (2025, added July 2026)."
+    },
+    "spatial": {
+      "scope": "country",
+      "regions": [
+        "united-kingdom"
+      ],
+      "description": "Great Britain",
+      "status": "provider-reported",
+      "evidence": "https://www.gov.uk/government/statistical-data-sets/road-safety-open-data"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Collision date",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    },
+    {
+      "name": "time",
+      "type": "time",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Collision time",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    },
+    {
+      "name": "latitude",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Collision latitude",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    },
+    {
+      "name": "longitude",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Collision longitude",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    },
+    {
+      "name": "collision_severity",
+      "type": "int",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Fatal / serious / slight",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    },
+    {
+      "name": "collision_index",
+      "type": "str",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Joins to vehicle and casualty tables",
+      "status": "provider-reported",
+      "evidence": "https://docs.ropensci.org/stats19/articles/stats19.html"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": 1500000000,
+    "note": "Full history 1.5 GB; last 5 years 97.7 MB; single years ~20 MB"
+  },
+  "limitations": [
+    "Injury collisions reported to police only",
+    "Coded values need the DfT data guide"
+  ],
+  "sourceUpdatedAt": "2026-07-30",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

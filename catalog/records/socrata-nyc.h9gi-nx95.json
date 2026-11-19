@@ -1,0 +1,184 @@
+{
+  "id": "socrata-nyc.h9gi-nx95",
+  "title": "Motor Vehicle Collisions - Crashes (New York City)",
+  "description": "One row per police-reported crash in NYC with date, time, coordinates, street, injuries and contributing factors.",
+  "publisher": "NYPD via NYC Open Data",
+  "provider": "NYC Open Data",
+  "providerId": "h9gi-nx95",
+  "canonicalUrl": "https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95",
+  "sourceLinks": [
+    {
+      "label": "NYC Open Data page",
+      "url": "https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95"
+    },
+    {
+      "label": "Metadata (JSON)",
+      "url": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    }
+  ],
+  "tags": [
+    "traffic",
+    "crashes",
+    "collisions",
+    "road safety",
+    "incidents",
+    "vehicles",
+    "injuries",
+    "new york"
+  ],
+  "purposes": [
+    "geospatial",
+    "exploratory",
+    "classification"
+  ],
+  "characteristics": [
+    "tabular",
+    "geospatial",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv",
+      "json"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json",
+    "note": "Socrata datasets export CSV and JSON."
+  },
+  "access": {
+    "method": "api",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json",
+    "note": "Bulk export and Socrata API; no key needed for small requests."
+  },
+  "license": {
+    "name": "NYC Open Data Terms of Use",
+    "url": "https://opendata.cityofnewyork.us/overview/#termsofuse",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json",
+    "note": "The dataset metadata does not name a license."
+  },
+  "coverage": {
+    "temporal": {
+      "start": null,
+      "end": null,
+      "ongoing": true,
+      "granularity": [
+        "event"
+      ],
+      "status": "unknown",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json",
+      "note": "Published 2014 and updated through 2026-11-06, but the metadata does not state when observations start."
+    },
+    "spatial": {
+      "scope": "city",
+      "regions": [
+        "new-york-city",
+        "united-states"
+      ],
+      "description": "New York City (five boroughs)",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "crash_date",
+      "type": "calendar_date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Date of the crash",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "crash_time",
+      "type": "text",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Time of the crash",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "latitude",
+      "type": "number",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Crash latitude",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "longitude",
+      "type": "number",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Crash longitude",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "borough",
+      "type": "text",
+      "concepts": [],
+      "level": "record",
+      "description": "Borough",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "number_of_persons_injured",
+      "type": "number",
+      "concepts": [],
+      "level": "record",
+      "description": "People injured",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "contributing_factor_vehicle_1",
+      "type": "text",
+      "concepts": [],
+      "level": "record",
+      "description": "Main contributing factor",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    },
+    {
+      "name": "collision_id",
+      "type": "text",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Joins to the vehicles and persons tables",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofnewyork.us/api/views/h9gi-nx95.json"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "Millions of rows; filter via the API"
+  },
+  "limitations": [
+    "Coordinates can be missing on some rows",
+    "Police-reported crashes only"
+  ],
+  "sourceUpdatedAt": "2026-11-06",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

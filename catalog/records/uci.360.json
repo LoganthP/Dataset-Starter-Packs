@@ -1,0 +1,151 @@
+{
+  "id": "uci.360",
+  "title": "Air Quality (Italian city, hourly)",
+  "description": "9,358 hourly readings from a gas multisensor device at road level in an Italian city, with reference concentrations, March 2004 to February 2005.",
+  "publisher": "UCI Machine Learning Repository",
+  "provider": "UCI",
+  "providerId": "360",
+  "canonicalUrl": "https://archive.ics.uci.edu/dataset/360/air+quality",
+  "sourceLinks": [
+    {
+      "label": "UCI dataset page",
+      "url": "https://archive.ics.uci.edu/dataset/360/air+quality"
+    },
+    {
+      "label": "UCI API metadata",
+      "url": "https://archive.ics.uci.edu/api/dataset?id=360"
+    }
+  ],
+  "tags": [
+    "air quality",
+    "pollution",
+    "sensors",
+    "co",
+    "no2",
+    "benzene",
+    "italy",
+    "time series"
+  ],
+  "purposes": [
+    "forecasting",
+    "regression"
+  ],
+  "characteristics": [
+    "tabular",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv",
+      "xlsx"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/360/air+quality"
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/360/air+quality"
+  },
+  "license": {
+    "name": "CC BY 4.0, but stated as research-only",
+    "url": "https://archive.ics.uci.edu/dataset/360/air+quality",
+    "commercialUse": "not-allowed",
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/360/air+quality",
+    "note": "The page shows CC BY 4.0 but also says commercial purposes are fully excluded. Treat as non-commercial until clarified."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2004-03-01",
+      "end": "2005-02-28",
+      "ongoing": false,
+      "granularity": [
+        "hourly"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    },
+    "spatial": {
+      "scope": "point-station",
+      "regions": [
+        "italy"
+      ],
+      "description": "One device in an Italian city",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "Date",
+      "type": "Date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "DD/MM/YYYY",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    },
+    {
+      "name": "Time",
+      "type": "Categorical",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "HH.MM.SS",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    },
+    {
+      "name": "CO(GT)",
+      "type": "Integer",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Reference CO concentration",
+      "status": "provider-reported",
+      "unit": "mg/m³",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    },
+    {
+      "name": "NO2(GT)",
+      "type": "Integer",
+      "concepts": [],
+      "level": "record",
+      "description": "Reference NO2 concentration",
+      "status": "provider-reported",
+      "unit": "µg/m³",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    },
+    {
+      "name": "T",
+      "type": "Continuous",
+      "concepts": [],
+      "level": "record",
+      "description": "Temperature",
+      "status": "provider-reported",
+      "unit": "°C",
+      "evidence": "https://archive.ics.uci.edu/api/dataset?id=360"
+    }
+  ],
+  "size": {
+    "rows": 9358,
+    "bytes": 1500000,
+    "note": "1.5 MB download"
+  },
+  "limitations": [
+    "Missing values are -200",
+    "Sensor drift and cross-sensitivity",
+    "Research use only"
+  ],
+  "sourceUpdatedAt": "2024-03-10",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

@@ -1,0 +1,144 @@
+{
+  "id": "open-meteo.historical-weather",
+  "title": "Open-Meteo Historical Weather API",
+  "description": "Reanalysis-based hourly and daily weather (temperature, precipitation, wind and more) for any coordinates, from 1940 (ERA5).",
+  "publisher": "Open-Meteo",
+  "provider": "Open-Meteo",
+  "providerId": "archive-api/v1/archive",
+  "canonicalUrl": "https://open-meteo.com/en/docs/historical-weather-api",
+  "sourceLinks": [
+    {
+      "label": "API documentation",
+      "url": "https://open-meteo.com/en/docs/historical-weather-api"
+    },
+    {
+      "label": "Licence",
+      "url": "https://open-meteo.com/en/licence"
+    }
+  ],
+  "tags": [
+    "weather",
+    "climate",
+    "temperature",
+    "precipitation",
+    "rainfall",
+    "wind",
+    "reanalysis",
+    "era5"
+  ],
+  "purposes": [
+    "forecasting",
+    "exploratory"
+  ],
+  "characteristics": [
+    "time-series",
+    "geospatial"
+  ],
+  "formats": {
+    "values": [
+      "json",
+      "csv",
+      "xlsx"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+  },
+  "access": {
+    "method": "api",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://open-meteo.com/en/docs/historical-weather-api",
+    "note": "No key for non-commercial use; commercial use needs an API key."
+  },
+  "license": {
+    "name": "CC BY 4.0 (data); paid plan for commercial API use",
+    "url": "https://open-meteo.com/en/licence",
+    "commercialUse": "conditional",
+    "status": "provider-reported",
+    "evidence": "https://open-meteo.com/en/licence",
+    "note": "Attribution required, with a link wherever data is displayed. Commercial API access requires a key."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "1940-01-01",
+      "end": null,
+      "ongoing": true,
+      "granularity": [
+        "hourly",
+        "daily"
+      ],
+      "dependsOnRequest": true,
+      "status": "provider-reported",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api",
+      "note": "ERA5 from 1940; daily values aggregate hourly data. You choose dates and variables."
+    },
+    "spatial": {
+      "scope": "global-point-query",
+      "regions": [
+        "global"
+      ],
+      "description": "Any coordinates; ERA5 ~25 km, ERA5-Land ~11 km grid",
+      "status": "provider-reported",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+    }
+  },
+  "schemaStatus": "partial",
+  "fields": [
+    {
+      "name": "latitude / longitude",
+      "type": "float",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "input",
+      "description": "Request parameters - one grid point per request",
+      "status": "provider-reported",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+    },
+    {
+      "name": "time",
+      "type": "datetime",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Hour or day of each value",
+      "status": "provider-reported",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+    },
+    {
+      "name": "temperature_2m_max / _min",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Daily max/min temperature",
+      "status": "provider-reported",
+      "unit": "°C",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+    },
+    {
+      "name": "precipitation_sum",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Daily precipitation",
+      "status": "provider-reported",
+      "unit": "mm",
+      "evidence": "https://open-meteo.com/en/docs/historical-weather-api"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "One row per requested hour/day"
+  },
+  "limitations": [
+    "Reanalysis, not station observations",
+    "Coarse grid for city-scale questions",
+    "Commercial use needs a paid key"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

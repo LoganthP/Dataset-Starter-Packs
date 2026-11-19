@@ -1,0 +1,13 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+backend/.state
+backend/tests/.state-*
+packs/*/data
+packs/*/outputs
+frontend/dist
+.env
+**/.env
+.pytest_cache

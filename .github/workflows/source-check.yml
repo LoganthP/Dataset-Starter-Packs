@@ -1,0 +1,16 @@
+name: Source check
+on:
+  schedule:
+    - cron: "17 3 * * 1"   # Mondays 03:17 UTC
+  workflow_dispatch:
+
+# Independent of PR CI on purpose: an upstream outage must never block contributions.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Probe official sources and small API queries
+        run: python scripts/check_sources.py

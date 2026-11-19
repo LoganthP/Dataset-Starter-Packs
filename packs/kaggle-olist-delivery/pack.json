@@ -1,0 +1,47 @@
+{
+  "slug": "kaggle-olist-delivery",
+  "title": "E-Commerce Delivery Analytics",
+  "tagline": "Use DuckDB SQL on 100k Brazilian orders to measure late deliveries - without inflating your KPIs.",
+  "provider": "Kaggle",
+  "difficulty": "intermediate",
+  "task_type": "SQL analytics",
+  "skills": ["DuckDB", "SQL joins", "table grain", "KPIs", "data licensing"],
+  "accent": "#F97316",
+  "question": "How often do Olist deliveries arrive late, and how much does lateness hurt review scores?",
+  "audience": "Students practising SQL joins and aggregations on a real multi-table dataset.",
+  "prerequisites": ["Python 3.12", "Basic SQL (select, join, group by)", "Free Kaggle account for real data"],
+  "estimated_time": "60 minutes",
+  "expected_runtime": {"sample": "~3 seconds", "real": "~10 seconds once the CSVs are in data/raw/"},
+  "source": {
+    "name": "Brazilian E-Commerce Public Dataset by Olist",
+    "publisher": "Olist, published on Kaggle",
+    "url": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+    "dataset_page": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+    "access_method": "kaggle",
+    "license": "CC BY-NC-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "doi": null,
+    "citation": "Olist and André Sionek (2018). Brazilian E-Commerce Public Dataset by Olist. Kaggle. https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+    "files": ["olist_orders_dataset.csv", "olist_order_items_dataset.csv", "olist_order_reviews_dataset.csv"],
+    "requires_credentials": true,
+    "manual_steps": [
+      "Sign in to Kaggle and open the dataset page.",
+      "Click Download to get archive.zip (~45 MB).",
+      "Upload the ZIP on this page, or run: python load_data.py --import path/to/archive.zip"
+    ]
+  },
+  "fixture": true,
+  "last_source_check": "2026-11-18",
+  "lesson": {
+    "title": "Rows are not orders",
+    "summary": "Orders have many items and sometimes several reviews. Joining them before aggregating multiplies rows and skews order-level metrics. Document each table's grain, aggregate children to one row per order, and check distinct order counts after every join."
+  },
+  "outputs": ["DuckDB order_facts table", "Monthly volume + late-rate chart", "Reviews by lateness", "Naive vs. correct grain comparison"],
+  "parameters": [],
+  "challenges": [
+    {"title": "Late rate by state", "description": "Join olist_customers_dataset.csv and compute late rate by customer_state.", "outcome": "A ranked chart of states with order counts."},
+    {"title": "Predict late delivery", "description": "Build features known at purchase time (estimated days, freight, seller) and train a classifier.", "outcome": "ROC AUC on a time-based holdout."},
+    {"title": "Seller scorecard", "description": "Aggregate items to seller grain and rank sellers by late share (min 30 orders).", "outcome": "A table that counts each order once per seller."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

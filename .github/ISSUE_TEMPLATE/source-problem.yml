@@ -1,0 +1,12 @@
+name: Source link or API changed
+description: A download, API query or column no longer matches the pack
+labels: [source-check]
+body:
+  - type: input
+    id: pack
+    attributes: { label: Pack slug, placeholder: nasa-exoplanets }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: Paste the error from the run log. }
+    validations: { required: true }

@@ -1,0 +1,47 @@
+{
+  "slug": "uci-dry-bean",
+  "title": "Dry Bean Classifier",
+  "tagline": "Classify seven bean varieties from image-derived shape features - and see what accuracy hides.",
+  "provider": "UCI",
+  "difficulty": "beginner",
+  "task_type": "Multiclass classification",
+  "skills": ["scikit-learn pipelines", "stratified split", "macro F1", "confusion matrix", "class imbalance"],
+  "accent": "#22C55E",
+  "question": "Can we tell seven dry bean varieties apart from shape measurements alone - for every variety, not just the common ones?",
+  "audience": "Students building their first honest classification project.",
+  "prerequisites": ["Python 3.12", "pandas", "Basic scikit-learn"],
+  "estimated_time": "40 minutes",
+  "expected_runtime": {"sample": "~5 seconds", "real": "~20 seconds after a 4.5 MB download"},
+  "source": {
+    "name": "Dry Bean Dataset",
+    "publisher": "UCI Machine Learning Repository (Koklu & Ozkan, 2020)",
+    "url": "https://archive.ics.uci.edu/static/public/602/dry+bean+dataset.zip",
+    "dataset_page": "https://archive.ics.uci.edu/dataset/602/dry+bean+dataset",
+    "access_method": "direct-download",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "doi": "10.24432/C50S4B",
+    "citation": "Dry Bean [Dataset]. (2020). UCI Machine Learning Repository. https://doi.org/10.24432/C50S4B",
+    "files": ["DryBeanDataset/Dry_Bean_Dataset.xlsx -> dry_bean.csv"],
+    "requires_credentials": false
+  },
+  "fixture": true,
+  "last_source_check": "2026-11-18",
+  "lesson": {
+    "title": "Accuracy can hide a failing class",
+    "summary": "Classes are imbalanced (BOMBAY is rare). Use a stratified split so every class is evaluated, report macro F1 and per-class scores, and keep preprocessing inside a pipeline so the scaler only sees training data."
+  },
+  "outputs": ["Class balance chart", "Confusion matrix", "Per-class F1: baseline vs. classifier"],
+  "parameters": [
+    {"name": "model", "label": "Classifier", "type": "select", "default": "logreg", "options": ["logreg", "random_forest"],
+     "help": "Logistic regression or random forest, both inside a StandardScaler pipeline."},
+    {"name": "test_size", "label": "Test size", "type": "number", "default": 0.25, "min": 0.1, "max": 0.5, "step": 0.05,
+     "help": "Fraction held out (stratified by class)."}
+  ],
+  "challenges": [
+    {"title": "Fix SIRA vs. DERMASON", "description": "Engineer features or try gradient boosting to separate the two most-confused classes.", "outcome": "Higher F1 on both, shown in the confusion matrix."},
+    {"title": "Cross-validated comparison", "description": "Use StratifiedKFold(5) to compare three models.", "outcome": "Mean ± std macro F1 table."},
+    {"title": "Feature importance", "description": "Use permutation importance on the held-out set.", "outcome": "A ranked bar chart and a sentence on correlated features."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

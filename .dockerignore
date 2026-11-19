@@ -1,0 +1,17 @@
+**/node_modules
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.ipynb_checkpoints
+frontend/dist
+backend/.state
+backend/tests
+packs/*/data
+packs/*/outputs
+.env
+**/.env
+.git
+.vercel

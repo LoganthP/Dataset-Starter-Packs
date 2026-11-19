@@ -1,0 +1,175 @@
+{
+  "id": "socrata-chicago.85ca-t3if",
+  "title": "Traffic Crashes - Crashes (Chicago)",
+  "description": "Each crash on Chicago streets under CPD jurisdiction as recorded in the E-Crash system, with time, location, conditions and injuries.",
+  "publisher": "Chicago Police Department via City of Chicago Data Portal",
+  "provider": "Chicago Data Portal",
+  "providerId": "85ca-t3if",
+  "canonicalUrl": "https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if",
+  "sourceLinks": [
+    {
+      "label": "Chicago Data Portal page",
+      "url": "https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if"
+    },
+    {
+      "label": "Metadata (JSON)",
+      "url": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    }
+  ],
+  "tags": [
+    "traffic",
+    "crashes",
+    "collisions",
+    "road safety",
+    "incidents",
+    "chicago",
+    "weather conditions"
+  ],
+  "purposes": [
+    "geospatial",
+    "classification",
+    "exploratory"
+  ],
+  "characteristics": [
+    "tabular",
+    "geospatial",
+    "time-series"
+  ],
+  "formats": {
+    "values": [
+      "csv",
+      "json"
+    ],
+    "status": "provider-reported",
+    "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json",
+    "note": "Socrata datasets export CSV and JSON."
+  },
+  "access": {
+    "method": "api",
+    "signInRequired": false,
+    "status": "provider-reported",
+    "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+  },
+  "license": {
+    "name": "City of Chicago Terms of Use",
+    "url": "https://www.chicago.gov/city/en/narr/foia/data_disclaimer.html",
+    "commercialUse": "unknown",
+    "status": "unknown",
+    "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json",
+    "note": "Metadata license reads 'See Terms of Use'; commercial terms not reviewed."
+  },
+  "coverage": {
+    "temporal": {
+      "start": "2015-01-01",
+      "end": null,
+      "ongoing": true,
+      "granularity": [
+        "event"
+      ],
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json",
+      "note": "Some districts from 2015; citywide from September 2017."
+    },
+    "spatial": {
+      "scope": "city",
+      "regions": [
+        "chicago",
+        "united-states"
+      ],
+      "description": "City of Chicago",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "crash_date",
+      "type": "calendar_date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "Date and time of the crash",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "date_police_notified",
+      "type": "calendar_date",
+      "concepts": [
+        "timestamp"
+      ],
+      "level": "record",
+      "description": "When police were notified",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "latitude",
+      "type": "number",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Crash latitude",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "longitude",
+      "type": "number",
+      "concepts": [
+        "latlon"
+      ],
+      "level": "record",
+      "description": "Crash longitude",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "weather_condition",
+      "type": "text",
+      "concepts": [],
+      "level": "record",
+      "description": "Weather at the time",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "most_severe_injury",
+      "type": "text",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Most severe injury in the crash",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    },
+    {
+      "name": "crash_record_id",
+      "type": "text",
+      "concepts": [
+        "join_key"
+      ],
+      "level": "record",
+      "description": "Joins to people and vehicles tables",
+      "status": "provider-reported",
+      "evidence": "https://data.cityofchicago.org/api/views/85ca-t3if.json"
+    }
+  ],
+  "size": {
+    "rows": null,
+    "bytes": null,
+    "note": "Hundreds of thousands of rows"
+  },
+  "limitations": [
+    "Not citywide before September 2017",
+    "Records change when reports are amended"
+  ],
+  "sourceUpdatedAt": "2026-11-17",
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "seed",
+  "reviewStatus": "reviewed"
+}

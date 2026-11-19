@@ -1,0 +1,200 @@
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/figtree";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Theme tokens as RGB channels. Light is the default; html.dark switches every token. */
+  :root {
+    color-scheme: light;
+    --c-white: 255 255 255;
+    --c-ink: 27 36 64; --c-ink-soft: 74 85 120; --c-ink-faint: 120 130 160;
+    --c-sky-wash: 238 244 255; --c-sky-deep: 220 230 255;
+    --c-peri: 124 131 253; --c-peri-ink: 61 67 201;
+    --c-aqua: 61 214 208; --c-aqua-ink: 11 107 103;
+    --c-sun: 255 209 102; --c-rose: 255 122 162;
+    --c-ok: 22 128 61; --c-bad: 214 52 58;
+    --c-chart-green: 31 157 76; /* analysis report series, validated against the light surface */
+    --c-warn: 166 105 15; --c-warn-ink: 92 58 0;
+    --c-link: 75 82 214; --c-on-accent: 255 255 255;
+    --page: #eef4ff;
+    --shadow-glass: 0 1px 0 rgba(255,255,255,.9) inset, 0 18px 40px -18px rgba(44,62,140,.35);
+    --shadow-lift: 0 1px 0 rgba(255,255,255,.9) inset, 0 28px 60px -20px rgba(44,62,140,.45);
+    --shadow-neu: 6px 6px 14px #c9d3ec, -6px -6px 14px #ffffff;
+    --shadow-neu-in: inset 4px 4px 10px #c9d3ec, inset -4px -4px 10px #ffffff;
+    --neu-bg: #e6edfb;
+    --glass-a: .58; --glass-strong-a: .82; --glass-border-a: .85;
+    --blob-a: 1; --dots: rgba(27,36,64,.10);
+    --sun-panel: linear-gradient(160deg,#FFE7A3,#FFD166);
+  }
+  html.dark {
+    color-scheme: dark;
+    --c-white: 30 37 58;
+    --c-ink: 232 236 250; --c-ink-soft: 172 182 212; --c-ink-faint: 128 139 172;
+    --c-sky-wash: 18 23 38; --c-sky-deep: 48 58 90;
+    --c-peri: 124 131 253; --c-peri-ink: 178 183 255;
+    --c-aqua: 45 190 184; --c-aqua-ink: 120 232 224;
+    --c-sun: 214 160 40; --c-rose: 230 100 140;
+    --c-ok: 74 222 128; --c-bad: 248 113 113;
+    --c-chart-green: 52 168 83; /* stepped darker than --c-ok for the dark surface */
+    --c-warn: 245 190 90; --c-warn-ink: 255 220 150;
+    --c-link: 165 172 255; --c-on-accent: 15 20 36;
+    --page: #0f1424;
+    --shadow-glass: 0 1px 0 rgba(255,255,255,.05) inset, 0 18px 40px -18px rgba(0,0,0,.6);
+    --shadow-lift: 0 1px 0 rgba(255,255,255,.06) inset, 0 28px 60px -20px rgba(0,0,0,.7);
+    --shadow-neu: 5px 5px 12px #0a0e1a, -4px -4px 10px #232b45;
+    --shadow-neu-in: inset 4px 4px 10px #0a0e1a, inset -3px -3px 8px #2a3352;
+    --neu-bg: #161c30;
+    --glass-a: .72; --glass-strong-a: .9; --glass-border-a: .9;
+    --blob-a: .35; --dots: rgba(255,255,255,.05);
+    --sun-panel: linear-gradient(160deg,#3a3220,#2a2416);
+  }
+  html { background: var(--page); }
+  body {
+    @apply font-body text-ink antialiased;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  h1, h2, h3, h4 { @apply font-display tracking-tight; }
+  :focus-visible { outline: 3px solid rgb(var(--c-peri)); outline-offset: 3px; border-radius: 10px; }
+  ::selection { background: rgb(var(--c-sun) / .7); }
+}
+
+/* The vibrant field the glass floats over. Fixed so panels keep their tint while scrolling. */
+.backdrop {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--page);
+}
+.backdrop::before {
+  content: ""; position: absolute; inset: 0; opacity: var(--blob-a);
+  background:
+    radial-gradient(40rem 32rem at 8% 6%, rgba(124,131,253,.45), transparent 60%),
+    radial-gradient(34rem 28rem at 92% 12%, rgba(61,214,208,.42), transparent 60%),
+    radial-gradient(38rem 30rem at 78% 92%, rgba(255,122,162,.32), transparent 62%),
+    radial-gradient(30rem 26rem at 18% 88%, rgba(255,209,102,.45), transparent 60%);
+}
+.backdrop::after {
+  content: ""; position: absolute; inset: 0; opacity: .35;
+  background-image: radial-gradient(var(--dots) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@layer components {
+  .glass {
+    background: rgb(var(--c-white) / var(--glass-a));
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgb(var(--c-white) / var(--glass-border-a));
+    @apply shadow-glass;
+  }
+  .glass-strong {
+    background: rgb(var(--c-white) / var(--glass-strong-a));
+    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    border: 1px solid rgb(var(--c-white) / .95);
+    @apply shadow-glass;
+  }
+  /* Clay: inflated, matte, for primary actions */
+  .btn-clay {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold text-paper shadow-clay
+           transition-[box-shadow,transform] duration-150 select-none disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-clay:active:not(:disabled) { @apply shadow-clay-press; transform: translateY(1px) scale(.98); }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-ink
+           bg-white/70 border border-white hover:bg-white transition-colors;
+  }
+  /* Neumorphic recessed track for the mode toggle */
+  .neu-track { background: var(--neu-bg); @apply shadow-neu-in rounded-2xl p-1.5; }
+  .chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-white/75 text-ink-soft border border-white;
+  }
+  .field {
+    @apply w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm text-ink shadow-[inset_0_1px_3px_rgba(27,36,64,.12)]
+           focus:outline-none focus:ring-2 focus:ring-peri;
+  }
+}
+
+/* Markdown rendering for README / data dictionary */
+.prose-pack { @apply text-[15px] leading-relaxed text-ink; max-width: 78ch; }
+.prose-pack h1 { @apply text-3xl font-bold mb-3 mt-1; }
+.prose-pack h2 { @apply text-xl font-bold mt-8 mb-2; }
+.prose-pack h3 { @apply text-lg font-semibold mt-6 mb-2; }
+.prose-pack p { @apply my-3; }
+.prose-pack a { @apply text-[#4b52d6] underline underline-offset-2; }
+.prose-pack ul { @apply list-disc pl-6 my-3 space-y-1; }
+.prose-pack ol { @apply list-decimal pl-6 my-3 space-y-1; }
+.prose-pack code { @apply rounded-md bg-sky-deep/70 px-1.5 py-0.5 text-[13px]; }
+.prose-pack pre { @apply my-4 overflow-x-auto rounded-2xl bg-white/80 border border-white p-4 text-[13px] leading-6; }
+.prose-pack pre code { @apply bg-transparent p-0; }
+.prose-pack blockquote { @apply border-l-4 border-peri pl-4 italic text-ink-soft; }
+.prose-pack table { @apply my-4 w-full border-collapse text-sm; display: block; overflow-x: auto; }
+.prose-pack th { @apply bg-white/80 text-left font-semibold px-3 py-2 border-b border-sky-deep; }
+.prose-pack td { @apply px-3 py-2 border-b border-white/80 align-top; }
+.prose-pack img { @apply rounded-2xl border border-white my-4 max-w-full bg-paper; }
+
+/* Small tooltip for filter help: <span class="tip" data-tip="...">?</span> */
+.tip { position: relative; }
+.tip:hover::after, .tip:focus-visible::after {
+  content: attr(data-tip); position: absolute; z-index: 40; left: 50%; top: calc(100% + 6px); transform: translateX(-50%);
+  width: max-content; max-width: 260px; padding: 6px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; line-height: 1.4;
+  background: rgb(var(--c-ink)); color: rgb(var(--c-white)); white-space: normal; text-align: left; pointer-events: none;
+}
+
+/* Card hover lift (translateY(-2px) + shadow) */
+.card-lift {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Hero background soft drift blobs (GPU-only transform & opacity) */
+@keyframes blobDriftA {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(24px, -18px, 0) scale(1.08); opacity: 0.75; }
+}
+@keyframes blobDriftB {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.45; }
+  50% { transform: translate3d(-20px, 20px, 0) scale(0.94); opacity: 0.65; }
+}
+.hero-blob-1 {
+  animation: blobDriftA 16s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.hero-blob-2 {
+  animation: blobDriftB 20s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Orchestrated hero entrance on first load */
+@keyframes heroEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-enter-1 { animation: heroEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both; }
+.hero-enter-2 { animation: heroEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both; }
+.hero-enter-3 { animation: heroEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.20s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .card-lift:hover { transform: none !important; }
+  .hero-blob-1, .hero-blob-2 { animation: none !important; }
+  .hero-enter-1, .hero-enter-2, .hero-enter-3 { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* Charts draw in a 640-unit viewBox. On phones that box is scaled to ~half, so axis text is set in viewBox
+   units that come out at ~10-11 CSS px instead of ~5. Every other tick label is hidden to keep them apart. */
+@media (max-width: 640px) {
+  figure[data-chart] svg[data-axes] text { font-size: 20px; }
+  figure[data-chart] svg text[data-thin] { display: none; }
+}

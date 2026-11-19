@@ -1,0 +1,44 @@
+{
+  "slug": "nasa-exoplanets",
+  "title": "Exoplanet Discovery Explorer",
+  "tagline": "Query the NASA Exoplanet Archive live and see how each discovery method shapes the catalog.",
+  "provider": "NASA",
+  "difficulty": "intermediate",
+  "task_type": "Astronomy · exploratory analysis",
+  "skills": ["ADQL / TAP", "log scales", "missing data", "selection bias", "classification"],
+  "accent": "#EC4899",
+  "question": "How have exoplanet discoveries changed over time, and what does each detection method let us see?",
+  "audience": "Students who like space and want to learn why a catalog is not a census.",
+  "prerequisites": ["Python 3.12", "pandas", "Comfort with log scales"],
+  "estimated_time": "50 minutes",
+  "expected_runtime": {"sample": "~5 seconds", "real": "~30 seconds (TAP query, ~6,000 rows)"},
+  "source": {
+    "name": "Planetary Systems Composite Parameters (pscomppars)",
+    "publisher": "NASA Exoplanet Archive - NExScI / Caltech-IPAC",
+    "url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync",
+    "dataset_page": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_about.html",
+    "health_check_url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+top+3+pl_name,discoverymethod,pl_rade+from+pscomppars&format=csv",
+    "health_check_expect": ["pl_name", "discoverymethod", "pl_rade"],
+    "access_method": "api",
+    "license": "NASA open data; cite the dataset DOI and acknowledge the archive",
+    "license_url": "https://exoplanetarchive.ipac.caltech.edu/docs/acknowledge.html",
+    "doi": "10.26133/NEA13",
+    "citation": "NASA Exoplanet Archive (2026), Planetary Systems Composite Parameters, NExScI-Caltech/IPAC, doi:10.26133/NEA13 (record your access date)",
+    "files": ["pscomppars.csv"],
+    "requires_credentials": false
+  },
+  "fixture": true,
+  "last_source_check": "2026-11-18",
+  "lesson": {
+    "title": "A catalog is not a census",
+    "summary": "Transits find big planets on short orbits, radial velocity finds massive ones, imaging finds young giants far out. Filtering to planets with a radius quietly removes most radial-velocity discoveries, so report missingness on the full catalog before you plot."
+  },
+  "outputs": ["Discoveries by method over time", "Radius vs. period scatter", "Radius coverage by method", "Method-prediction baseline"],
+  "parameters": [],
+  "challenges": [
+    {"title": "Habitable-zone shortlist", "description": "Add pl_eqt and st_teff to the query and filter to Earth-sized planets with equilibrium temperature 180-310 K.", "outcome": "A table and chart of candidates with a sentence on bias."},
+    {"title": "Mass-radius relation", "description": "Fit log(mass) vs. log(radius) for planets with both values.", "outcome": "Slope with a confidence interval, split at 1.5 Earth radii."},
+    {"title": "Facility timeline", "description": "Group discoveries by disc_facility.", "outcome": "A chart showing Kepler, K2 and TESS eras."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

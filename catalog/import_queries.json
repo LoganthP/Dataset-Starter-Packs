@@ -1,0 +1,7 @@
+{
+  "_comment": "Search terms each provider adapter imports. Imported records are labelled unreviewed until a maintainer promotes them to catalog/records/.",
+  "max_per_query": 6,
+  "uci": ["traffic", "weather", "air quality", "energy", "bike", "sales"],
+  "kaggle": ["traffic accidents", "road crashes latitude longitude", "weather india", "bike sharing", "ecommerce orders"],
+  "nasa-cmr": ["precipitation daily", "air temperature daily", "MODIS land surface temperature"]
+}

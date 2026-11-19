@@ -1,0 +1,115 @@
+{
+  "id": "uci.602",
+  "packId": "uci-dry-bean",
+  "title": "Dry Bean Dataset",
+  "description": "16 shape features extracted from images of 13,611 dry beans across seven registered varieties.",
+  "publisher": "UCI Machine Learning Repository (Koklu & Ozkan, 2020)",
+  "provider": "UCI",
+  "providerId": "602",
+  "canonicalUrl": "https://archive.ics.uci.edu/dataset/602/dry+bean+dataset",
+  "sourceLinks": [
+    {
+      "label": "UCI dataset page",
+      "url": "https://archive.ics.uci.edu/dataset/602/dry+bean+dataset"
+    }
+  ],
+  "tags": [
+    "beans",
+    "agriculture",
+    "image features",
+    "shape",
+    "classification",
+    "imbalanced"
+  ],
+  "purposes": [
+    "classification"
+  ],
+  "characteristics": [
+    "tabular"
+  ],
+  "formats": {
+    "values": [
+      "xlsx"
+    ],
+    "status": "verified",
+    "evidence": "packs/uci-dry-bean/load_data.py",
+    "note": "The archive contains an .xlsx file; the pack converts it to CSV."
+  },
+  "access": {
+    "method": "direct-download",
+    "signInRequired": false,
+    "status": "verified",
+    "evidence": "packs/uci-dry-bean/load_data.py"
+  },
+  "license": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "commercialUse": "allowed",
+    "status": "provider-reported",
+    "evidence": "https://archive.ics.uci.edu/dataset/602/dry+bean+dataset"
+  },
+  "coverage": {
+    "temporal": {
+      "start": null,
+      "end": null,
+      "ongoing": false,
+      "granularity": [
+        "static"
+      ],
+      "status": "verified",
+      "evidence": "packs/uci-dry-bean/data-dictionary.md",
+      "note": "Not a time series."
+    },
+    "spatial": {
+      "scope": "not-applicable",
+      "regions": [],
+      "description": "Lab images (Turkey)",
+      "status": "provider-reported",
+      "evidence": "https://archive.ics.uci.edu/dataset/602/dry+bean+dataset"
+    }
+  },
+  "schemaStatus": "complete",
+  "fields": [
+    {
+      "name": "Area",
+      "type": "int",
+      "concepts": [],
+      "level": "record",
+      "description": "Pixels inside the bean boundary",
+      "status": "verified",
+      "unit": "px²"
+    },
+    {
+      "name": "AspectRation",
+      "type": "float",
+      "concepts": [],
+      "level": "record",
+      "description": "Major/minor axis ratio",
+      "status": "verified"
+    },
+    {
+      "name": "Class",
+      "type": "str",
+      "concepts": [
+        "target_label"
+      ],
+      "level": "record",
+      "description": "Variety label (7 classes)",
+      "status": "verified"
+    }
+  ],
+  "size": {
+    "rows": 13611,
+    "bytes": null,
+    "note": "ZIP ~4.5 MB"
+  },
+  "limitations": [
+    "Features only, no images",
+    "Correlated features",
+    "Imbalanced classes"
+  ],
+  "sourceUpdatedAt": null,
+  "lastVerifiedAt": "2026-11-18",
+  "origin": "pack",
+  "reviewStatus": "reviewed"
+}

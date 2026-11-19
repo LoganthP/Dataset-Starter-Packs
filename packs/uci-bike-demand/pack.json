@@ -1,0 +1,45 @@
+{
+  "slug": "uci-bike-demand",
+  "title": "Bike Demand Forecast",
+  "tagline": "Predict next-hour bike rentals and beat a historical baseline without leaking the answer.",
+  "provider": "UCI",
+  "difficulty": "beginner",
+  "task_type": "Regression · time series",
+  "skills": ["pandas", "feature engineering", "time-based split", "scikit-learn", "leakage"],
+  "accent": "#6366F1",
+  "question": "How accurately can we estimate next-hour rental demand?",
+  "audience": "Students who know basic pandas and want their first honest forecasting project.",
+  "prerequisites": ["Python 3.12", "Basic pandas"],
+  "estimated_time": "45 minutes",
+  "expected_runtime": {"sample": "~10 seconds", "real": "~30 seconds after a 300 KB download"},
+  "source": {
+    "name": "Bike Sharing Dataset",
+    "publisher": "UCI Machine Learning Repository (Fanaee-T, 2013)",
+    "url": "https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip",
+    "dataset_page": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset",
+    "access_method": "direct-download",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "doi": "10.24432/C5W894",
+    "citation": "Fanaee-T, H. (2013). Bike Sharing [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5W894",
+    "files": ["hour.csv"],
+    "requires_credentials": false
+  },
+  "fixture": true,
+  "last_source_check": "2026-11-18",
+  "lesson": {
+    "title": "casual + registered = cnt",
+    "summary": "The two user-type counts add up to the target. Feeding them to a model leaks the answer and produces a near-perfect, useless score. Weather is also an observation, not a forecast, so it is lagged by one hour."
+  },
+  "outputs": ["Hourly demand profile chart", "Holdout actual-vs-predicted chart", "MAE by hour: baseline vs. model"],
+  "parameters": [
+    {"name": "holdout_fraction", "label": "Holdout fraction", "type": "number", "default": 0.2, "min": 0.05, "max": 0.5, "step": 0.05,
+     "help": "Share of the timeline (the most recent part) held out for evaluation."}
+  ],
+  "challenges": [
+    {"title": "Add a second model", "description": "Try RandomForestRegressor or a Poisson GLM on the same features.", "outcome": "Report holdout MAE next to the existing two."},
+    {"title": "Forecast 24 hours ahead", "description": "Drop the 1- and 2-hour lags so the model only uses information from a day earlier.", "outcome": "Plot how MAE grows as the horizon grows."},
+    {"title": "Prediction intervals", "description": "Fit quantile models (loss='quantile') for the 10th and 90th percentiles.", "outcome": "Report the share of holdout hours inside the interval."}
+  ],
+  "entrypoints": {"notebook": "starter.ipynb", "loader": "load_data.py", "analysis": "analysis.py"}
+}

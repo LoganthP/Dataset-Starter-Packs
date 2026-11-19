@@ -1,0 +1,8 @@
+name: Small improvement
+description: Data dictionary fixes, tricky fixtures, Windows setup checks
+labels: [good first issue]
+body:
+  - type: textarea
+    id: change
+    attributes: { label: What would you improve? }
+    validations: { required: true }
