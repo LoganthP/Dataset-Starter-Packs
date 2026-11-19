@@ -40,7 +40,7 @@ export default function CriteriaBar({ criteria, sp, setSp, concepts, regions }: 
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label="Search requirements">
+    <div role="region" className="flex flex-wrap items-center gap-2" aria-label="Search requirements">
       {criteria.topic && (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/85 py-1 pl-3 pr-1 text-sm">
           <span className="text-ink-soft">Topic</span>

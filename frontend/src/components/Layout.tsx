@@ -71,7 +71,7 @@ function AccountLink() {
       className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-2 text-sm font-semibold ${active ? "bg-ink text-on-accent" : "text-ink-soft hover:bg-white"}`}>
       <Settings size={16} aria-hidden />
       <span className="hidden lg:inline">{user ? user.email.split("@")[0] : "Log in"}</span>
-      {kaggle?.connected && <span className="h-2 w-2 rounded-full bg-ok" aria-label="Kaggle connected" />}
+      {kaggle?.connected && <span role="status" className="h-2 w-2 rounded-full bg-ok" aria-label="Kaggle connected" />}
     </Link>
   );
 }
