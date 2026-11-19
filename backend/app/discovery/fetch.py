@@ -54,7 +54,24 @@ def headers_for(url: str, auth: dict | None = None) -> dict:
 
 
 def _http_error(exc: urllib.error.HTTPError, host: str) -> FetchError:
-    from .. import kaggle_connect
+    from .. import blob, kaggle_connect
+
+    if host.endswith(".blob.vercel-storage.com"):
+        if exc.code in (401, 403):
+            return FetchError(f"Blob refused to give this upload to the analysis worker (HTTP {exc.code}). The worker's BLOB_READ_WRITE_TOKEN "
+                              "must be the token of the same Blob store the app uploads to. Set it on the worker, restart it, and run again.", "auth")
+        if exc.code in (404, 410):
+            return FetchError("The uploaded file is no longer in Blob (deleted, or the upload never finished). Upload it again.", "not_found")
+
+    if host.endswith(".blob.vercel-storage.com"):
+        if exc.code in (401, 403):
+            return FetchError(f"Access denied to private Vercel Blob store (HTTP {exc.code}). Ensure BLOB_READ_WRITE_TOKEN is configured and matches between Vercel and the analysis worker.", "auth")
+        if exc.code in (404, 410):
+            return FetchError(f"The uploaded Blob file was not found or has expired (HTTP {exc.code}).", "not_found")
+        if exc.code == 413:
+            return FetchError("The Blob upload exceeded the provider transfer limit (HTTP 413).", "too_large")
+        if exc.code == 429:
+            return FetchError("Vercel Blob rate limit or quota exceeded (HTTP 429). Try again later.", "network")
 
     if kaggle_connect.is_kaggle_url(f"https://{host}/") and exc.code == 403:
         body = ""

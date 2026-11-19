@@ -11,9 +11,11 @@ export const PROVIDER_TINT: Record<string, string> = {
   Kaggle: "#F97316",
 };
 
-export function StatusPill({ status }: { status: RunStatus }) {
+export function StatusPill({ status, workerAvailable = true }: { status: RunStatus; workerAvailable?: boolean }) {
   const map: Record<RunStatus, { label: string; cls: string; icon: ReactNode }> = {
-    queued: { label: "Queued", cls: "bg-white/80 text-ink-soft", icon: <CircleDashed size={14} /> },
+    queued: workerAvailable === false
+      ? { label: "No worker available", cls: "bg-sun/40 text-warn-ink", icon: <AlertTriangle size={14} /> }
+      : { label: "Waiting for worker", cls: "bg-white/80 text-ink-soft", icon: <CircleDashed size={14} /> },
     running: { label: "Running", cls: "bg-peri/15 text-peri-ink", icon: <Loader2 size={14} className="animate-spin" /> },
     succeeded: { label: "Succeeded", cls: "bg-ok/12 text-ok", icon: <CheckCircle2 size={14} /> },
     failed: { label: "Failed", cls: "bg-bad/12 text-bad", icon: <XCircle size={14} /> },

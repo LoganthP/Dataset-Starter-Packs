@@ -100,6 +100,16 @@ export interface Results {
   provenance: Record<string, unknown>;
 }
 
+/** Where a queued run stands (queue mode): waiting for a worker, or in line behind others. */
+export interface QueueInfo {
+  state: "none" | "offline" | "online" | "busy" | "inline";
+  headline: string;
+  detail: string;
+  ahead: number;
+  waitingSeconds: number | null;
+  warnings: ("database" | "blob_token" | "secret_key")[];
+}
+
 export interface Run {
   id: string;
   slug: string;
@@ -115,6 +125,8 @@ export interface Run {
   headline: string | null;
   is_sample: boolean | null;
   results?: Results | null;
+  queue?: QueueInfo | null;
+  worker_available?: boolean;
 }
 
 export interface SourceCheck {
@@ -428,8 +440,10 @@ export interface Insights {
   trends?: { time: string; bucket: string; series: { column: string; points: [string, number][] }[]; by_hour?: { column: string; values: [number, number | null][] } };
   seasonal?: { column: string; years: number[]; series: { year: number; values: [number, number][] }[] };
   target?: { column: string; reason: string; unit: string | null };
-  relationships?: { target: string; rows: number; min_rows: number; enough: boolean; tested: number;
-    items: { column: string; n: number; pearson: number; spearman: number | null; unit: string | null }[] };
+  relationships?: {
+    target: string; rows: number; min_rows: number; enough: boolean; tested: number;
+    items: { column: string; n: number; pearson: number; spearman: number | null; unit: string | null }[]
+  };
   scatter?: { x: string; y: string; points: [number, number][]; total: number; shown: number; x_unit: string | null; y_unit: string | null };
 }
 
@@ -454,17 +468,23 @@ export interface AnalysisRun {
   stage?: "resolving" | "downloading" | "extracting" | "profiling" | "charting" | "saving" | "done" | null;
   error_kind?: string | null;
   error_detail?: LimitDetail | null;
-  progress?: { bytes?: number; total?: number | null; rows?: number; row_total?: number; phase?: string; done?: number; total_items?: number | null;
-               unit?: string; bytes_total?: number } | null;
+  progress?: {
+    bytes?: number; total?: number | null; rows?: number; row_total?: number; phase?: string; done?: number; total_items?: number | null;
+    unit?: string; bytes_total?: number
+  } | null;
   params?: RunParams | null;
   owner?: string | null;
+  queue?: QueueInfo | null;
   worker?: string | null;
+  worker_available?: boolean;
   dataset: { id: string; title: string; exists: boolean };
   isLatest: boolean;
 }
 
-export type AnalysisListItem = Omit<AnalysisRun, "report" | "log" | "dataset" | "isLatest"> & { dataset_title: string; rows: number | null; coverage: string | null;
-  kind?: ReportKind | null; scope?: string | null };
+export type AnalysisListItem = Omit<AnalysisRun, "report" | "log" | "dataset" | "isLatest"> & {
+  dataset_title: string; rows: number | null; coverage: string | null;
+  kind?: ReportKind | null; scope?: string | null
+};
 
 export interface ComparisonAnalysis {
   runId: string;
@@ -569,8 +589,10 @@ export interface InspectResult {
   expandedBytes?: number;
   skipped?: { name: string; reason: string }[];
   types?: { type: string; files: number; bytes: number }[];
-  suggested?: { handler: string; label: string; scores: Record<string, number>; sampleFiles: number; sampleBytes: number; fullFiles: number; fullBytes: number;
-    sampleTransfer?: number; fullTransfer?: number };
+  suggested?: {
+    handler: string; label: string; scores: Record<string, number>; sampleFiles: number; sampleBytes: number; fullFiles: number; fullBytes: number;
+    sampleTransfer?: number; fullTransfer?: number
+  };
   note?: string;
   source?: "remote" | "cache";
   transferredBytes?: number;
@@ -581,6 +603,7 @@ export interface InspectResult {
 
 export interface Capabilities {
   packRuns: boolean;
+  workerAvailable?: boolean;
   storage: "sqlite" | "postgres";
   uploadMode: "direct" | "blob";
   maxUploadMB: number;
@@ -589,6 +612,7 @@ export interface Capabilities {
   maxExtractBytes?: number;
   quickSampleBytes?: number;
   runMode?: "thread" | "queue";
+  worker?: { state: QueueInfo["state"]; message: string };
   kaggleOAuth?: boolean;
   formats?: { key: string; label: string; description: string }[];
 }

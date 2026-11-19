@@ -11,14 +11,16 @@ export const STAGES = [
   { key: "resolving", label: "Fetching" },
   { key: "extracting", label: "Inspecting" },
   { key: "profiling", label: "Analyzing" },
+  { key: "charting", label: "Building insights" },
   { key: "saving", label: "Saving" },
 ] as const;
 
 export function stageIndex(stage: string | null | undefined): number {
   if (!stage || stage === "resolving" || stage === "downloading") return 0;
   if (stage === "extracting") return 1;
-  if (stage === "profiling" || stage === "charting") return 2;
-  if (stage === "saving") return 3;
+  if (stage === "profiling") return 2;
+  if (stage === "charting") return 3;
+  if (stage === "saving") return 4;
   if (stage === "done") return STAGES.length;
   return 0;
 }

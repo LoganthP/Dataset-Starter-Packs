@@ -78,6 +78,12 @@ def _log(run_id: str, line: str) -> None:
 
 
 def _expire_stale() -> None:
+    if RUN_MODE == "queue":
+        # Jobs wait for a worker as long as it takes (up to DSP_QUEUE_MAX_AGE_HOURS); only runs whose worker vanished are touched.
+        from .. import queueing
+
+        queueing.reap_throttled()
+        return
     cutoff = (dt.datetime.now(dt.UTC) - dt.timedelta(minutes=STALE_MINUTES)).isoformat(timespec="seconds")
     durable.execute("update analysis_runs set status='failed', finished_at=?, error_kind='interrupted', error=? "
                     "where status in ('queued','running') and created_at < ?",
@@ -584,17 +590,17 @@ def _scope(report: dict, rec: dict, fetch: dict | None, params: dict) -> dict:
 
 def _execute(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode: str = "full") -> None:
     folder = RUNS_DIR / run_id
-    folder.mkdir(parents=True, exist_ok=True)
     quick = mode == "sample"
-    run0 = get(run_id, user=ANY) or {}
-    params = run0.get("params") or {}
-    prepare = quick and bool(params.get("prepare"))  # "Prepare archive and run sample": whole download, sampled analysis
-    deadline = time.monotonic() + (QUICK_DEADLINE_S if quick and not prepare else FULL_DEADLINE_S)
-    _update(run_id, status="running")
     known_total, partial, method, plan, url = None, False, None, {}, None
     timings: dict = dict((fetch or {}).get("_timings") or {})
     remote, sha, cache_state, transferred, info = None, None, "none", 0, None
     try:
+        folder.mkdir(parents=True, exist_ok=True)
+        run0 = get(run_id, user=ANY) or {}
+        params = run0.get("params") or {}
+        prepare = quick and bool(params.get("prepare"))  # "Prepare archive and run sample": whole download, sampled analysis
+        deadline = time.monotonic() + (QUICK_DEADLINE_S if quick and not prepare else FULL_DEADLINE_S)
+        _update(run_id, status="running")
         if fetch:
             name = re.sub(r"[^A-Za-z0-9._-]+", "_", (fetch.get("name") or fetch["url"].rsplit("/", 1)[-1]).replace("/", "_"))[-120:] or "download"
             if not _ext_format(name) and registry.type_from_name(name) == "unknown":
@@ -863,7 +869,7 @@ def _pair_file(rec: dict, fetch: dict, pair_url: str) -> dict:
 
 INLINE = os.getenv("DSP_ANALYSIS_INLINE", "0") == "1"
 # queue: the API only records the job; app.worker (Docker service, or any machine with disk and time) runs it.
-RUN_MODE = os.getenv("DSP_RUN_MODE", "queue" if os.getenv("VERCEL") else "thread")
+RUN_MODE = config.RUN_MODE
 
 
 def _launch(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode: str = "full") -> None:
@@ -880,7 +886,7 @@ def _launch(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode
 def claim_next(worker: str) -> dict | None:
     """Worker side of queue mode: atomically take the oldest queued job."""
     for row in durable.query("select id from analysis_runs where status='queued' and job is not null order by created_at limit 5"):
-        if durable.execute_count("update analysis_runs set status='running', worker=? where id=? and status='queued'", (worker, row["id"])):
+        if durable.execute_count("update analysis_runs set status='running', worker=?, stage='resolving' where id=? and status='queued'", (worker, row["id"])):
             return get(row["id"], user=ANY)
     return None
 
@@ -989,8 +995,15 @@ def start_from_blob(rec: dict, url: str, name: str, user: str | None = None) -> 
     """A file the browser uploaded straight to Vercel Blob (private, multipart for large files)."""
     from .. import blob
 
-    if not blob.is_blob_url(url):
+    if not blob.is_blob_url(url) or "/uploads/" not in url.split("?")[0]:
         raise ImportError_("Only files uploaded to this app's Blob store can be analyzed this way.")
+    try:  # a definite answer now beats a failed run later (token mismatch, upload that never finished, too large)
+        size = blob.probe(url)
+    except blob.BlobProblem as exc:
+        raise FetchError(str(exc), exc.kind) from exc
+    if size and size > MAX_BYTES:
+        raise FetchError(f"{Path(name).name} is {limits.human(size)}, over the {limits.human(MAX_BYTES)} transfer limit (DSP_MAX_TRANSFER_BYTES).",
+                         "too_large", limits.detail("transfer", size, limit_value=MAX_BYTES, actions=["open_source"]))
     run_id = _create(rec, Path(name).name, None, "full", owner=user)
     _launch(run_id, rec, {"url": url, "name": Path(name).name, "blob": True}, None)
     return run_id
@@ -998,7 +1011,7 @@ def start_from_blob(rec: dict, url: str, name: str, user: str | None = None) -> 
 
 def recover_interrupted() -> None:
     """At startup. With a shared Postgres other instances may be mid-run, so only expire stale runs there."""
-    if durable.IS_POSTGRES:
+    if durable.IS_POSTGRES or RUN_MODE == "queue":
         _expire_stale()
     else:
         durable.execute("update analysis_runs set status='failed', finished_at=?, error=? where status in ('queued','running')",

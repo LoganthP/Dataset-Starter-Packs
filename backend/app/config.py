@@ -10,8 +10,20 @@ PACKS_DIR = REPO_ROOT / "packs"
 ON_VERCEL = bool(os.getenv("VERCEL"))
 # Vercel functions can only write to /tmp; durable data goes to DATABASE_URL (see durable.py) and Blob.
 STATE_DIR = Path(os.getenv("DSP_STATE_DIR") or ("/tmp/dsp-state" if ON_VERCEL else BACKEND_DIR / ".state")).resolve()
-# Starter-pack runs are minutes-long subprocesses with heavy ML dependencies: local and Docker only.
-PACK_RUNS_ENABLED = os.getenv("DSP_PACK_RUNS", "0" if ON_VERCEL else "1") == "1"
+# queue: the API records jobs and a worker (python -m app.worker) runs them; thread: the API runs them itself.
+# Vercel can't run minutes-long jobs, so it always queues.
+RUN_MODE = os.getenv("DSP_RUN_MODE", "queue" if ON_VERCEL else "thread")
+HAS_SHARED_DB = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL"))
+# Starter-pack runs are minutes-long subprocesses with heavy ML dependencies. Locally and in Docker the API runs them;
+# on Vercel they're queued for the worker, which needs the shared Postgres to hand status, logs and charts back.
+PACK_RUNS_ENABLED = os.getenv("DSP_PACK_RUNS", "1" if (not ON_VERCEL or HAS_SHARED_DB) else "0") == "1"
+# A job nobody picked up for this long is failed with a clear message (hours).
+QUEUE_MAX_AGE_HOURS = float(os.getenv("DSP_QUEUE_MAX_AGE_HOURS", "24"))
+# A worker whose heartbeat is older than this is considered gone (seconds); it beats every HEARTBEAT_SECONDS.
+WORKER_HEARTBEAT_SECONDS = float(os.getenv("DSP_WORKER_HEARTBEAT_SECONDS", "5"))
+WORKER_STALE_SECONDS = float(os.getenv("DSP_WORKER_STALE_SECONDS", "30"))
+# Chart and output files kept per starter-pack run (stored in Postgres).
+MAX_ARTIFACT_BYTES = int(float(os.getenv("DSP_MAX_ARTIFACT_MB", "25")) * 1024 * 1024)
 RUNS_DIR = STATE_DIR / "runs"
 DB_PATH = STATE_DIR / "dsp.sqlite3"
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"

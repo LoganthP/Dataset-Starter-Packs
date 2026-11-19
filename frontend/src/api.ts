@@ -8,6 +8,16 @@ import type {
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
+/** The Blob client's errors are terse; say which side is wrong (the server's message from /api/blob/upload-token is kept). */
+function uploadFailure(e: Error): string {
+  const m = e.message || "";
+  if (/not configured|BLOB_READ_WRITE_TOKEN/i.test(m)) return m;
+  if (/expired|invalid.*token|client token/i.test(m)) return "The upload token expired or was rejected. Reload the page and upload again; if it keeps happening, the app's BLOB_READ_WRITE_TOKEN is wrong.";
+  if (/quota|402|limit/i.test(m)) return "The Blob store refused the upload (quota or plan limit). Check storage usage in the Vercel dashboard.";
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return "The browser couldn't reach Vercel Blob. Check the connection and try again; the file was not stored.";
+  return `Upload to private storage failed: ${m || "unknown error"}`;
+}
+
 export class ApiError extends Error {
   /** Machine-readable reason from the API (auth, consent, timeout, too_large, not_found, format, network, login_required). */
   kind?: string;
@@ -129,19 +139,24 @@ export const api = {
   kaggleOAuthUrl: (returnTo: string) => `${BASE}/api/kaggle/oauth/start?returnTo=${encodeURIComponent(returnTo)}`,
   /** Upload a downloaded file. On Vercel with a Blob store the browser sends it straight to Blob (no 4.5 MB body limit). */
   analyzeUpload: async (id: string, file: File, caps?: Capabilities, onProgress?: (pct: number) => void) => {
-    if (caps?.uploadMode === "blob") {
-      const { upload } = await import("@vercel/blob/client");
-      const blob = await upload(`uploads/${id.replace(/[^A-Za-z0-9._-]+/g, "_")}/${file.name}`, file, {
-        access: "private",
-        handleUploadUrl: `${BASE}/api/blob/upload-token`,
-        multipart: file.size > 50 * 1024 * 1024,
-        onUploadProgress: (e) => onProgress?.(e.percentage),
-      });
-      return request<{ runId: string }>(`/api/datasets/${encodeURIComponent(id)}/analyze/blob`, json({ url: blob.url, name: file.name }));
-    }
-    if (caps?.maxTransferBytes && file.size > caps.maxTransferBytes) {
+    if (caps?.maxTransferBytes && file.size > caps.maxTransferBytes) {  // same limit in both modes; say so before sending bytes
       throw new ApiError(`${file.name} is ${sizeLabel(file.size)}, over the ${sizeLabel(caps.maxTransferBytes)} transfer limit (DSP_MAX_TRANSFER_BYTES).`, 413,
         "too_large", { limit: "transfer", limitBytes: caps.maxTransferBytes, measuredBytes: file.size, actions: ["open_source"] });
+    }
+    if (caps?.uploadMode === "blob") {
+      const { upload } = await import("@vercel/blob/client");
+      let blob;
+      try {
+        blob = await upload(`uploads/${id.replace(/[^A-Za-z0-9._-]+/g, "_")}/${file.name}`, file, {
+          access: "private",
+          handleUploadUrl: `${BASE}/api/blob/upload-token`,
+          multipart: file.size > 50 * 1024 * 1024,
+          onUploadProgress: (e) => onProgress?.(e.percentage),
+        });
+      } catch (e) {
+        throw new ApiError(uploadFailure(e as Error), 502, "upload");
+      }
+      return request<{ runId: string }>(`/api/datasets/${encodeURIComponent(id)}/analyze/blob`, json({ url: blob.url, name: file.name }));
     }
     if (caps && file.size > caps.directUploadMaxMB * 2 ** 20) {
       throw new Error(`This deployment accepts direct uploads up to ${caps.directUploadMaxMB} MB. Connect a private Vercel Blob store to upload larger files.`);
@@ -171,7 +186,7 @@ let metaCache: DiscoverMeta | null = null;
 export function useDiscoverMeta() {
   const [meta, setMeta] = useState<DiscoverMeta | null>(metaCache);
   useEffect(() => {
-    api.discoverMeta().then((m) => { metaCache = m; setMeta(m); }).catch(() => {});
+    api.discoverMeta().then((m) => { metaCache = m; setMeta(m); }).catch(() => { });
   }, []);
   return meta;
 }

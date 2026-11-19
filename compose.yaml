@@ -18,6 +18,8 @@ services:
       - dsp-data:/data
     restart: unless-stopped
 
+  # Runs dataset analyses and starter packs. With a hosted app, set the SAME DATABASE_URL, DSP_SECRET_KEY and
+  # BLOB_READ_WRITE_TOKEN as Vercel Production in .env; `docker compose run --rm worker python -m app.worker --doctor` checks them.
   worker:
     profiles: ["worker"]
     image: dataset-starter-packs:latest

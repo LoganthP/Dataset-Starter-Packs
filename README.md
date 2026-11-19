@@ -250,7 +250,18 @@ One image serves the API and the built React app on port 8000. `docker compose -
 2. Add **Neon Postgres** from the Vercel Marketplace (sets `DATABASE_URL`). Analyses, comparisons, overlays and curated records are stored there; without it they would be lost on every cold start.
 3. Connect a **Vercel Blob** store (sets `BLOB_READ_WRITE_TOKEN`). Uploads then go from the browser straight to private Blob storage with authorized multipart uploads (the upload token caps the object at `DSP_MAX_TRANSFER_BYTES`), so they never pass through the function request body. Without Blob, uploads go to the function directly and are capped at 95 MB (Vercel's function request-body limit is 100 MB).
 4. Set `DSP_SECRET_KEY` (encrypts connected Kaggle accounts) and, for Kaggle OAuth, `DSP_PUBLIC_URL`.
-5. Run the **analysis worker** somewhere with disk and time: on Vercel the API defaults to `DSP_RUN_MODE=queue`, records each job in Postgres and returns; `python -m app.worker` (or the Docker image with `command: python -m app.worker`) on any VM or container service, with the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN` and `DSP_SECRET_KEY`, claims jobs and runs them. Progress, Stop and reports appear in the same Run view.
+5. Run the **worker** somewhere with disk and time (any VM or container service). On Vercel the API runs in `DSP_RUN_MODE=queue`: it only records jobs in Postgres, and the worker runs both dataset analyses and starter-pack runs. Until a worker is connected the Run view says so ("Waiting for a worker: none is connected") instead of sitting on "Queued".
+
+   ```bash
+   docker compose build app                         # the image holds the API, packs and analysis stack
+   docker compose --profile worker up -d --no-deps worker
+   # or, without Docker, from backend/:
+   python -m app.worker
+   python -m app.worker --doctor                    # checks database, Blob, secret key, packs; prints no secrets; exit 1 on a problem
+   ```
+
+   Required environment (names only, set the **same values** as in Vercel Production): `DATABASE_URL` (the Neon connection string), `DSP_SECRET_KEY`, `BLOB_READ_WRITE_TOKEN`. `DSP_RUN_MODE=queue` is implied. Optional: `DSP_WORKER_NAME`, `DSP_WORKER_POLL_SECONDS` (2), `DSP_WORKER_HEARTBEAT_SECONDS` (5), `DSP_WORKER_STALE_SECONDS` (30), `DSP_QUEUE_MAX_AGE_HOURS` (24), `DSP_MAX_ARTIFACT_MB` (25 per run).
+   Check the wiring from the deployed site: `GET /api/worker/status` (online/busy/offline/none) and `GET /api/diagnostics?deep=1` (Blob token present and accepted, database id, worker mismatches reported as warnings naming the variable). Both return fingerprints, never values. A worker whose heartbeat stops is reported offline after `DSP_WORKER_STALE_SECONDS`; its running job goes back in line (twice at most) and queued jobs wait for it for up to `DSP_QUEUE_MAX_AGE_HOURS`, then fail with the reason.
 6. Optional: provider keys from `.env.example`.
 
-Starter-pack runs are turned off on Vercel (they need the full ML stack and minutes of runtime); pack pages still offer the starter and notebook downloads.
+Starter-pack runs on Vercel are executed by the worker too (the function never runs the ML stack). Status, log, `results.json` and every chart are stored in Postgres (each run's files up to `DSP_MAX_ARTIFACT_MB`), so the Run view and its charts reload after a refresh from any instance. With no `DATABASE_URL` pack runs stay off and the pack pages offer the starter and notebook downloads.

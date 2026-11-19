@@ -1,5 +1,7 @@
 """Durable state: what must survive restarts, container recreation and serverless cold starts.
 
+  pack_runs / run_artifacts   starter-pack runs: status, log, results and chart files (so they survive on Vercel)
+  workers              heartbeat of each worker process (is anything there to run queued jobs?)
   analysis_runs        every Analyze run (report JSON, source snapshot, file URL + SHA-256)
   comparison_reports   saved comparisons (immutable snapshots)
   overlays             facts verified by an analysis (fields, dates, formats) per dataset
@@ -46,6 +48,20 @@ TABLES = [
     """create table if not exists provider_connections (user_id text not null, provider text not null, account text,
       secret text not null, kind text not null, created_at text not null, verified_at text, last_error text,
       primary key (user_id, provider))""",
+    # Starter-pack runs (formerly a separate local SQLite file): the API queues them, a worker runs them, and the
+    # log, results and chart files are stored here so the deployed app can show them after a refresh or restart.
+    """create table if not exists pack_runs (
+      id text primary key, slug text not null, mode text not null, params text not null default '{}', status text not null,
+      created_at text not null, started_at text, finished_at text, duration_s double precision, exit_code integer,
+      error text, headline text, is_sample integer, log text not null default '', worker text, attempts integer not null default 0,
+      results text, cancel_requested integer not null default 0)""",
+    "create index if not exists pack_runs_by_slug on pack_runs(slug, created_at)",
+    """create table if not exists run_artifacts (
+      run_id text not null, name text not null, content_type text not null, size bigint not null, data bytea, primary key (run_id, name))""",
+    # One row per worker process; the API reads this to say whether anything is there to pick a job up.
+    """create table if not exists workers (
+      name text primary key, kind text not null, started_at text not null, heartbeat_at text not null, current_run text,
+      version text, blob_fp text, secret_fp text, db_fp text, host text)""",
     """create table if not exists oauth_states (state text primary key, user_id text not null, verifier text not null,
       return_to text, created_at text not null)""",
 ]
@@ -104,7 +120,7 @@ def init() -> None:
             return
         with _raw() as con:
             for ddl in TABLES:
-                con.execute(ddl)
+                con.execute(ddl if IS_POSTGRES else ddl.replace(" bytea", " blob").replace("double precision", "real"))
             for table, col, decl in MIGRATIONS:
                 if IS_POSTGRES:
                     con.execute(f"alter table {table} add column if not exists {col} {decl}")
@@ -139,7 +155,7 @@ def execute_count(q: str, params: tuple = ()) -> int:
 
 
 def reset_for_tests(tables: tuple[str, ...] = ("analysis_runs", "comparison_reports", "overlays", "curated_records", "users", "sessions",
-                                               "provider_connections", "oauth_states")) -> None:
+                                               "provider_connections", "oauth_states", "pack_runs", "run_artifacts", "workers")) -> None:
     init()
     with _raw() as con:
         for t in tables:

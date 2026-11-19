@@ -3,6 +3,7 @@ import { Database, ExternalLink, FlaskConical, Loader2, Play, Square, Trash2, Up
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { api, fmtBytes, timeAgo, useDiscoverMeta } from "../api";
 import type { DataStatus, Mode, PackDetail } from "../types";
+import { QueueNotice } from "./QueueNotice";
 import ResultsView from "./ResultsView";
 import { ErrorBox, StatusPill } from "./ui";
 import { useRunWatcher } from "./useRunWatcher";
@@ -219,7 +220,7 @@ export default function RunPanel({ pack, initialRunId, autoStart, onRunChange }:
             )}
           </div>
           {realBlocked && <p className="text-xs text-ink-soft">Upload the Kaggle archive first.</p>}
-          {runsOff && <p className="text-xs text-ink-soft">Pack runs are off on this deployment. Download the starter or the notebook and run it locally, or use the Docker setup.</p>}
+          {runsOff && <p className="text-xs text-ink-soft">Runs are off on this deployment: it has no shared database for a worker to read. Set DATABASE_URL and start the worker, or download the starter and run it locally.</p>}
           {startError && <ErrorBox message={startError} />}
         </div>
 
@@ -248,7 +249,8 @@ export default function RunPanel({ pack, initialRunId, autoStart, onRunChange }:
                   transition={{ type: "spring", stiffness: 120, damping: 20 }}
                 />
               </div>
-              {stepLabel && active && <p className="mt-2 text-sm font-semibold">{stepLabel}</p>}
+              {run?.status === "queued" && <QueueNotice queue={run.queue} />}
+              {stepLabel && active && run?.status !== "queued" && <p className="mt-2 text-sm font-semibold">{stepLabel}</p>}
               <pre
                 ref={logRef}
                 className="mt-3 max-h-72 flex-1 overflow-auto whitespace-pre-wrap rounded-2xl border border-white bg-sky-wash p-4 font-[ui-monospace,Menlo,Consolas,monospace] text-[12.5px] leading-6 text-ink-soft"

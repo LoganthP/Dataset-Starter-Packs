@@ -11,6 +11,7 @@ import { api, type ApiError, sizeLabel, timeAgo, useApi, useDiscoverMeta } from 
 import AnalysisResults from "../components/analysis/AnalysisResults";
 import { FilePicker, Inspector, KaggleBanner, NextActions, PairNote, phaseShare, phaseText } from "../components/analysis/RunControls";
 import { useAccount } from "../lib/account";
+import { QueueNotice } from "../components/QueueNotice";
 import { ErrorBox, Spinner, StatusPill } from "../components/ui";
 import { RETRYABLE, STAGES, failureLabel, stageIndex } from "../lib/analysisText";
 import { useShortlist } from "../lib/shortlist";
@@ -175,7 +176,7 @@ export default function DatasetRunPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files, d]);
 
-  const stage = run ? stageIndex(run.stage) : 0;
+  const stage = run ? (run.status === "queued" ? -1 : stageIndex(run.stage)) : 0;  // queued: no stage has begun
   // Within a step the bar moves by its own counter: rows or bytes fetched, files extracted, images analyzed.
   const progress = run?.status === "succeeded" ? 1 : run ? Math.min(0.95, (stage + (active ? phaseShare(run) : 0.5)) / STAGES.length) : 0;
   const phase = run ? phaseText(run) : null;
@@ -364,6 +365,7 @@ export default function DatasetRunPage() {
                       );
                     })}
                   </ol>
+                  {run.status === "queued" && <QueueNotice queue={run.queue} />}
                   {phase && <p className="mt-2 text-sm tabular-nums text-ink-soft" aria-live="polite">{phase}</p>}
                   <pre ref={logRef} className="mt-3 max-h-72 flex-1 overflow-auto whitespace-pre-wrap [overflow-wrap:anywhere] rounded-2xl border border-white bg-sky-wash p-4 font-[ui-monospace,Menlo,Consolas,monospace] text-[12.5px] leading-6 text-ink-soft"
                     aria-live="polite" aria-label="Run log">{run.log || "Waiting for output"}</pre>

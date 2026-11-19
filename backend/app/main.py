@@ -6,6 +6,7 @@ Interactive docs at http://127.0.0.1:8000/docs
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -21,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import accounts, blob, catalog, config, db, durable, kaggle_connect, packaging, runner, sources
+from . import accounts, blob, catalog, config, db, durable, kaggle_connect, packaging, queueing, runner, sources
 from .discovery import analysis, comparisons, dataimport, importer, limits, live, resolve, search
 from .discovery import search as discovery
 from .discovery import store as catalog_store
@@ -70,12 +71,46 @@ class RunRequest(BaseModel):
 @app.get("/api/health")
 def health():
     return {"ok": True, "python": sys.version.split()[0], "packs": len(catalog.list_packs()),
-            "github_repo": config.GITHUB_REPO or None, "storage": durable.backend(), "platform": "vercel" if config.ON_VERCEL else "server"}
+            "github_repo": config.GITHUB_REPO or None, "storage": durable.backend(), "platform": "vercel" if config.ON_VERCEL else "server",
+            "runMode": config.RUN_MODE}
+
+
+@app.get("/api/worker/status")
+def worker_status():
+    """Is anything there to run queued jobs? (heartbeats of `python -m app.worker`; see queueing.py)"""
+    return queueing.status()
+
+
+@app.get("/api/diagnostics")
+def diagnostics(deep: bool = False):
+    """Deployment self-check with no secrets in it: storage, run mode, worker, Blob. `?deep=1` also asks Blob whether
+    this process's token works, and that every setting the worker must share with the API matches."""
+    worker = queueing.status()
+    mism = {"blob_token": "BLOB_READ_WRITE_TOKEN", "secret_key": "DSP_SECRET_KEY", "database": "DATABASE_URL"}
+    out = {"storage": durable.backend(), "databaseId": queueing.db_fp(), "runMode": config.RUN_MODE, "packRuns": config.PACK_RUNS_ENABLED,
+           "worker": worker, "blob": blob.status(),
+           "secretKeySet": bool(os.getenv("DSP_SECRET_KEY")),
+           "maxTransferBytes": limits.MAX_TRANSFER_BYTES,
+           "problems": []}
+    if config.RUN_MODE == "queue":
+        if not durable.IS_POSTGRES:
+            out["problems"].append("Queue mode needs DATABASE_URL (Postgres) so the API and the worker share one database.")
+        if worker["state"] in ("none", "offline"):
+            out["problems"].append(worker["message"])
+        for w in worker.get("warnings", []):
+            out["problems"].append(f"The worker and this app have different {mism[w]} values. Set the same one on both.")
+    if deep:
+        out["blob"]["remote"] = blob.check_remote()
+        if blob.enabled() and not out["blob"]["remote"]["ok"]:
+            out["problems"].append(out["blob"]["remote"]["message"])
+    out["ok"] = not out["problems"]
+    return out
 
 
 def capabilities() -> dict:
     lim = limits.capabilities()
     return {"packRuns": config.PACK_RUNS_ENABLED, "storage": durable.backend(), "runMode": analysis.RUN_MODE,
+            "worker": queueing.status() if config.RUN_MODE == "queue" else None,
             "uploadMode": "blob" if blob.enabled() else "direct", **lim,
             # Vercel Functions accept request bodies up to 100 MB; larger files go browser -> private Blob (multipart) when a store is connected.
             "directUploadMaxMB": min(95, lim["maxUploadMB"]) if config.ON_VERCEL else lim["maxUploadMB"],
@@ -188,8 +223,8 @@ async def upload_data(slug: str, file: UploadFile = File(...)):
 @app.post("/api/packs/{slug}/runs", status_code=202)
 def create_run(slug: str, body: RunRequest):
     if not config.PACK_RUNS_ENABLED:
-        raise HTTPException(503, "Starter-pack runs are turned off on this deployment (they need the local or Docker setup). "
-                                 "Download the starter or the notebook to run it yourself.")
+        raise HTTPException(503, "Starter-pack runs are turned off on this deployment: on Vercel they need DATABASE_URL (Postgres) so a worker "
+                                 "can run them (see the README). Download the starter or the notebook to run it yourself.")
     try:
         return runner.submit(slug, body.mode, {k: v for k, v in body.params.items()})
     except ValueError as exc:
@@ -210,7 +245,7 @@ def _run_or_404(run_id: str) -> dict:
 
 @app.get("/api/runs/{run_id}")
 def get_run(run_id: str):
-    run = _run_or_404(run_id)
+    run = runner.with_queue(_run_or_404(run_id))
     run["results"] = runner.results(run_id) if run["status"] == "succeeded" else None
     return run
 
@@ -224,11 +259,13 @@ def get_log(run_id: str, offset: int = Query(0, ge=0)):
 @app.get("/api/runs/{run_id}/files/{name}")
 def get_run_file(run_id: str, name: str):
     _run_or_404(run_id)
-    base = runner.run_dir(run_id).resolve()
-    path = (base / name).resolve()
-    if path.parent != base or not path.is_file():
+    found = runner.read_file(run_id, name)
+    if not found:
         raise HTTPException(404, "File not found")
-    return FileResponse(path)
+    data, ctype = found
+    if isinstance(data, bytes):  # produced by a worker and stored in the database
+        return Response(data, media_type=ctype, headers={"Cache-Control": "private, max-age=3600"})
+    return FileResponse(data)
 
 
 @app.post("/api/runs/{run_id}/cancel")
@@ -541,16 +578,23 @@ def analyze_blob(record_id: str, body: BlobAnalyzeRequest, request: Request):
 async def blob_upload_token(request: Request):
     """Token endpoint for @vercel/blob/client upload() (handleUploadUrl)."""
     if not blob.enabled():
-        raise HTTPException(404, "Blob uploads are not configured (BLOB_READ_WRITE_TOKEN).")
-    body = await request.json()
+        raise HTTPException(503, "Large uploads aren't set up: BLOB_READ_WRITE_TOKEN is missing on this deployment. "
+                                 "Connect a private Blob store in Vercel (Storage) and redeploy.")
+    if not blob.status()["tokenFormatOk"]:
+        raise HTTPException(500, "BLOB_READ_WRITE_TOKEN isn't a Blob read/write token (it should start with vercel_blob_rw_).")
+    try:
+        body = await request.json()
+    except ValueError as exc:
+        raise HTTPException(400, "Expected a JSON event from @vercel/blob/client.") from exc
     if body.get("type") != "blob.generate-client-token":
         raise HTTPException(400, "Unsupported event")
     pathname = str((body.get("payload") or {}).get("pathname") or "")
     if not pathname.startswith("uploads/") or ".." in pathname:
         raise HTTPException(400, "Uploads go under uploads/<dataset>/.")
     # The token caps the object size, so the 2 GB transfer limit holds for browser -> Blob multipart uploads too.
-    return {"type": "blob.generate-client-token",
-            "clientToken": blob.client_token(pathname, maximum_size_in_bytes=limits.MAX_TRANSFER_BYTES)}
+    return JSONResponse({"type": "blob.generate-client-token",
+                         "clientToken": blob.client_token(pathname, maximum_size_in_bytes=limits.MAX_TRANSFER_BYTES)},
+                        headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/datasets/{record_id}/analyze/upload", status_code=202)
@@ -594,8 +638,11 @@ def get_analysis(run_id: str, view: Literal["full", "lite"] = "full"):
     run = analysis.get(run_id)
     if not run:
         raise HTTPException(404, "Analysis not found")
-    run.pop("job", None)
+    has_job = bool(run.pop("job", None))
+    queued_for_worker = run["status"] == "queued" and has_job
     run.pop("summary", None)
+    if queued_for_worker:  # where it is in line, and whether a worker is there to run it
+        run["queue"] = queueing.queue_info("analysis_runs", run["created_at"], run_id)
     if view == "lite" and run.get("report"):
         run["report"] = {k: v for k, v in run["report"].items() if k != "preview"} | {"preview_deferred": len(run["report"].get("preview") or [])}
     rec = catalog_store.all_records().get(run["dataset_id"])
