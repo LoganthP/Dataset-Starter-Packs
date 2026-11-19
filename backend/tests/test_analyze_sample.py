@@ -387,7 +387,7 @@ def test_household_power_trends_and_card_preview(client):
     rows = ["Date;Time;Global_active_power;Global_reactive_power;Voltage"]
     for i in range(600):
         h, m = divmod(17 * 60 + 24 + i, 60)
-        rows.append(f"{16 + h // 24}/12/2006;{h % 24:02d}:{m:02d}:00;{'?' if i % 100 == 0 else f"{1 + (i % 7) / 3:.3f}"};0.1{i % 9};{233 + (i % 11) / 2:.3f}")
+        rows.append(f"{16 + h // 24}/12/2006;{h % 24:02d}:{m:02d}:00;{'?' if i % 100 == 0 else f'{1 + (i % 7) / 3:.3f}'};0.1{i % 9};{233 + (i % 11) / 2:.3f}")
     r = client.post("/api/datasets/uci.235/analyze/upload", files={"file": ("household_power_consumption.txt", io.BytesIO("\n".join(rows).encode()), "text/plain")})
     run = wait(client, r.json()["runId"])
     ins = run["report"]["insights"]

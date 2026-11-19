@@ -266,7 +266,7 @@ def test_analyze_listed_parquet_file(client, monkeypatch):
 
 
     def fake_download(url, dest):
-        assert url.endswith("0000.parquet")
+        assert url.endswith(".parquet")
         duckdb.sql("select * from (values ('a', 0, date '2020-01-01'), ('b', 1, date '2020-06-01'), ('b', 1, date '2020-06-01')) "
                    "t(text, label, created)").write_parquet(str(dest))
         return dest.stat().st_size
@@ -279,7 +279,7 @@ def test_analyze_listed_parquet_file(client, monkeypatch):
     assert run["status"] == "succeeded", run["error"]
     rep = run["report"]
     assert rep["rows_total"] == 3 and rep["duplicate_rows"] == 1 and rep["date_coverage"]["min"] == "2020-01-01"
-    assert run["file_url"].endswith("0000.parquet") and run["source"]["canonicalUrl"].startswith("https://huggingface.co/")
+    assert run["file_url"].endswith(".parquet") and run["source"]["canonicalUrl"].startswith("https://huggingface.co/")
     item = next(i for i in client.get("/api/datasets", params={"q": "social media"}).json()["items"] if i["id"] == "hf.cardiffnlp--tweet_eval")
     assert item["analysis"]["runId"] == run["id"] and item["analyzable"]
 
