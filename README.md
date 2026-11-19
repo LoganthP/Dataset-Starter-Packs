@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" alt="Dataset Starter Packs" width="100%"/>
+<img src="assets/banner.svg" alt="Dataset Starter Packs" width="100%"/>
 
 <a href="https://dataset-starter-packs.vercel.app">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=6366F1&center=true&vCenter=true&width=760&lines=Describe+your+project.+Get+matching+datasets.;Every+claim+verified%2C+provider-reported+or+unknown.;Ready-to-run+NASA+%C2%B7+UCI+%C2%B7+Kaggle+starter+packs.;Sample+mode+works+offline+from+a+fresh+clone." alt="Typing animation"/>
@@ -46,7 +46,7 @@
 
 </div>
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🧭 About
 
@@ -55,7 +55,7 @@
 Type what you're building — *"traffic incident data with latitude, longitude and timestamps, at least one year, CSV"* — and the app turns it into **editable requirements**, checks every dataset against its real source metadata, and tells you in plain sentences **why** it fits or doesn't. Pick one, run a **sample or full analysis** in the browser, or start from one of the **curated starter packs**: self-contained NASA, UCI and Kaggle projects with a notebook, a data dictionary, a baseline and extension challenges.
 
 <div align="center">
-  <img src="docs/assets/pipeline.svg" alt="Describe → Discover → Inspect → Run → Build" width="100%"/>
+  <img src="assets/pipeline.svg" alt="Describe → Discover → Inspect → Run → Build" width="100%"/>
 </div>
 
 Every starter pack answers five questions up front:
@@ -71,7 +71,7 @@ Every starter pack answers five questions up front:
 > [!TIP]
 > Each pack also names its dataset's **biggest technical trap** (leakage, sentinel values, row-vs-order grain…), avoids it in code, and guards it with a regression test.
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## ✨ Features
 
@@ -138,7 +138,7 @@ Five self-contained projects with notebooks, fixtures, tests and downloadable st
 </tr>
 </table>
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 📦 The Starter Packs
 
@@ -155,7 +155,7 @@ Five self-contained projects with notebooks, fixtures, tests and downloadable st
 > [!NOTE]
 > Preview charts come from the **synthetic sample** and are labelled as such. Run real mode to get real results. This table is generated from each `pack.json` — regenerate it with `python scripts/validate_catalog.py --write`.
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🏗️ Architecture
 
@@ -268,7 +268,7 @@ flowchart TB
     T -.-> AN
 ```
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🧰 Tech Stack
 
@@ -319,7 +319,7 @@ Dataset-Starter-Packs/
 └── .github/workflows/         ci.yml (PRs) · source-check.yml (weekly) · release.yml (ZIPs on tags)
 ```
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## ⚡ Quick Start
 
@@ -485,7 +485,7 @@ python -m pytest -q tests              # run the pack's own tests
 | **Network** | Not needed | NASA API / UCI download / Kaggle ZIP you provide |
 | **Results** | Watermarked **SYNTHETIC SAMPLE** | Real numbers + provenance (URL, retrieval date, checksum or query) |
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🔎 How Discover Works
 
@@ -557,7 +557,7 @@ New handlers subclass `Handler` in `backend/app/discovery/formats/` and call `re
 - `catalog/benchmark.json` — purpose-based queries with expected matches and tempting results that must *not* be confirmed.
 </details>
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## ⚙️ Configuration
 
@@ -582,7 +582,7 @@ All values are optional. Locally, put them in `backend/.env`; for Docker, in `.e
 | `DSP_PACK_RUNS` | `1` locally · off on Vercel | Allow starter-pack runs on this server |
 | `DSP_PORT` | `8000` | Host port for Docker |
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🧪 Testing &amp; Development
 
@@ -617,7 +617,7 @@ python scripts/check_sources.py
 
 **CI** (`.github/workflows/ci.yml`) runs lint, metadata validation, the search benchmark, every pack's tests and notebook on **Ubuntu and Windows**, a fresh-venv install of each pack on its own requirements, the API tests and the frontend build. It needs no credentials or network access to providers — source availability is checked separately each week (`source-check.yml`), and tagged releases publish starter ZIPs (`release.yml`).
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🚀 Deploy
 
@@ -670,7 +670,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 > [!NOTE]
 > Starter-pack runs are turned off on Vercel (they need the full ML stack and minutes of runtime); pack pages still offer the starter ZIP and notebook downloads.
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🧩 Contributing
 
@@ -694,7 +694,7 @@ ruff check .
 | :---: | :---: | :---: | :---: |
 | Keep a verified dataset + project brief handy | Contribute upstream | Start your own independent collection | Grab one pack's ZIP from [Releases](../../releases) |
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 🛠️ Troubleshooting
 
@@ -746,21 +746,12 @@ The error names the limit, its value and the measured size. Raise `DSP_MAX_TRANS
 On Vercel the API only records jobs (`DSP_RUN_MODE=queue`). Start the worker (`python -m app.worker`) somewhere with disk and time, using the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN` and `DSP_SECRET_KEY`.
 </details>
 
-<img src="docs/assets/divider.svg" width="100%" alt=""/>
+<img src="assets/divider.svg" width="100%" alt=""/>
 
 ## 📄 License
 
 Code is released under the [**MIT License**](LICENSE) © 2026 Loganth P and contributors.
 Datasets keep their own licenses and citations — see [**DATA_SOURCES.md**](DATA_SOURCES.md) and each pack's dataset card.
-
-<div align="center">
-
-<br/>
-
-**Built with ❤️ by [Loganth P](https://github.com/LoganthP)** &nbsp;·&nbsp;
-[LinkedIn](https://www.linkedin.com/in/loganth-p-158667280/) &nbsp;·&nbsp;
-[Live Demo](https://dataset-starter-packs.vercel.app)
-
 <sub>If this project helped you start a data project, consider giving it a ⭐</sub>
 
 </div>
