@@ -199,7 +199,7 @@ export default function ComparePage() {
         <div className="glass rounded-3xl p-8 text-center">
           <p className="font-display text-2xl font-bold">Your comparison queue is empty</p>
           <p className="mx-auto mt-1 max-w-[52ch] text-ink-soft">Choose Compare on up to three results. They stay here while you switch tabs.</p>
-          <Link to={lastDiscover} className="btn-clay mt-5 bg-peri">{lastDiscover === "/" ? "Go to Discover" : "Back to your last search"}</Link>
+          <Link to={lastDiscover} className="btn-clay mt-5 bg-peri">{lastDiscover === "/discover" || lastDiscover === "/" ? "Go to Discover" : "Back to your last search"}</Link>
         </div>
       ) : res.loading && !res.data ? <Spinner label="Loading comparison" /> : res.error ? <ErrorBox message={res.error} /> : (
         <>
