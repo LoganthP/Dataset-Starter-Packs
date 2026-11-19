@@ -27,15 +27,6 @@
 <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"/>
 <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions"/>
 
-<br/>
-
-<a href="https://github.com/LoganthP/Dataset-Starter-Packs/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/LoganthP/Dataset-Starter-Packs/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"/></a>
-<img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT License"/>
-<img src="https://img.shields.io/badge/version-0.5.0-6366f1?style=flat-square" alt="Version 0.5.0"/>
-<img src="https://img.shields.io/badge/starter_packs-5-ec4899?style=flat-square" alt="5 starter packs"/>
-<img src="https://img.shields.io/github/stars/LoganthP/Dataset-Starter-Packs?style=flat-square&color=f59e0b" alt="GitHub stars"/>
-
-<br/><br/>
 
 [**🌐 Live Demo**](https://dataset-starter-packs.vercel.app) &nbsp;·&nbsp;
 [**⚡ Quick Start**](#-quick-start) &nbsp;·&nbsp;
