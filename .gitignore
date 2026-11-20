@@ -28,3 +28,6 @@ Thumbs.db
 # Local verification output
 playwright_screenshots/
 /*.patch
+
+# Built frontend copied here on Vercel so the CDN serves it (see vercel.json)
+/public/

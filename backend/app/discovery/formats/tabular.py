@@ -1,4 +1,4 @@
-"""Tables: CSV, TSV, JSON, Parquet, Excel. Profiled with DuckDB (analysis.analyze), plus a trajectory
+"""Tables: CSV, TSV, JSON, Parquet, Excel, plus formats converted to a table first (formats/convert.py). Profiled with DuckDB (analysis.analyze), plus a trajectory
 section when the table holds positions over time (x/y/z + a time column), e.g. orbit state vectors."""
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import datetime as dt
 import re
 from pathlib import Path
 
-from .registry import TABULAR, Handler, Job, register
+from .registry import CONVERTED, TABULAR, Handler, Job, register, type_from_name
 
 MANEUVER_LABELS = {0: "No maneuver", 1: "East-West", 2: "North-South", 3: "Longitude shift start", 4: "Longitude shift end", 5: "Graveyard"}
 
@@ -14,18 +14,18 @@ MANEUVER_LABELS = {0: "No maneuver", 1: "East-West", 2: "North-South", 3: "Longi
 class Tabular(Handler):
     key = "tabular"
     label = "Table"
-    types = TABULAR
+    types = TABULAR + CONVERTED
     description = "Rows and columns: schema, missing values, distributions and charts."
 
     def score(self, members: list[dict]) -> float:
-        tab = [m for m in members if m["type"] in TABULAR]
+        tab = [m for m in members if m["type"] in self.types]
         if not tab:
             return 0.0
         # A folder of images with one labels.csv is an image dataset, not a table.
         return max(0.35, sum(m["size"] for m in tab) / max(1, sum(m["size"] for m in members)))
 
     def select(self, members: list[dict], *, sample: bool, params: dict) -> list[dict]:
-        tab = [m for m in members if m["type"] in TABULAR]
+        tab = [m for m in members if m["type"] in self.types]
         if params.get("members"):
             return tab
         if not tab:
@@ -40,8 +40,29 @@ class Tabular(Handler):
 
         paths = sorted(job.paths, key=lambda p: ("metadata" in p.name.lower(), -p.stat().st_size))
         main, meta = paths[0], (paths[1] if len(paths) > 1 else job.extra.get("pair_path"))
+        from . import convert
+        from .registry import sniff_path
+
         fmt = _ext_format(main.name) or ("parquet" if main.read_bytes()[:4] == b"PAR1" else "csv")
-        worksheet = None
+        kind = job.params.get("_kind") or (type_from_name(main.name) if type_from_name(main.name) in CONVERTED else None)
+        if kind is None and type_from_name(main.name) == "xml":
+            kind = "xmltable"
+        if kind is None and sniff_path(main) in CONVERTED:
+            kind = sniff_path(main)
+        if kind is None and sniff_path(main) == "xlsx":
+            fmt = "xlsx"  # an Excel file with another name
+        worksheet, converted = None, None
+        if kind in CONVERTED:
+            sheet = None
+            if kind in ("xls", "ods"):
+                sheets = convert.sheets(main, kind)
+                sheet = job.params.get("sheet") if job.params.get("sheet") in sheets else sheets[0]
+                job.log(f"Reading worksheet '{sheet}' of {main.name} ({len(sheets)} sheet{'s' if len(sheets) != 1 else ''})")
+                worksheet = {"file": _rel(main, job.root), "sheet": sheet, "sheets": sheets}
+            source_name = _rel(main, job.root)
+            main, converted = convert.to_csv(main, kind, sheet=sheet, row_limit=job.extra.get("row_limit"), log=job.log)
+            converted["file"] = source_name
+            fmt = "csv"
         if fmt == "xlsx":
             sheets = xlsx_sheets(main)
             sheet = job.params.get("sheet") if job.params.get("sheet") in sheets else sheets[0]
@@ -52,9 +73,11 @@ class Tabular(Handler):
         report = profile(main, fmt, row_limit=job.extra.get("row_limit"), known_total=job.known_total, partial=job.partial,
                          method=job.method, deadline=job.deadline, on_charts=job.on_charts)
         report["kind"] = "table"
-        report["analyzed_file"] = (worksheet or {}).get("file") or _rel(main, job.root)
+        report["analyzed_file"] = (worksheet or {}).get("file") or (converted or {}).get("file") or _rel(main, job.root)
         if worksheet:
             report["worksheet"] = worksheet
+        if converted:
+            report["converted"] = converted
         report["file_format"] = fmt
         traj = trajectory(main, fmt, report)
         if traj:

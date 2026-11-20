@@ -570,7 +570,7 @@ def _scope(report: dict, rec: dict, fetch: dict | None, params: dict) -> dict:
         return {"kind": "worksheet", "label": "Full selected worksheet", "file": ws["file"], "sheet": ws["sheet"], "sheets": ws["sheets"]}
     arc = report.get("archive") or {}
     if arc:
-        data_like = [m for m in arc.get("candidates", []) if m["type"] in registry.TABULAR + ("sinex", "sinex-gz", "sinex-z")]
+        data_like = [m for m in arc.get("candidates", []) if m["type"] in registry.TABULAR + registry.CONVERTED + ("sinex", "sinex-gz", "sinex-z")]
         if report.get("kind") in ("table", "trajectory", "sinex") and len(data_like) > len(arc.get("selected", [])):
             return {"kind": "file", "label": "Full selected file", "file": report.get("analyzed_file") or arc.get("selected", [None])[0]}
     if params.get("pairUrl"):
@@ -658,7 +658,8 @@ def _execute(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mod
                     transferred = remote["bytes_fetched"]
                     cache_state = "range" if transferred else "hit"
                 else:
-                    whole = not quick or prepare or detected_kind(info) in ("zip", "parquet", "xlsx", "binary")
+                    # Only line-based text can be cut after the sample rows; anything binary (archives, Excel, NetCDF...) is read whole.
+                    whole = not quick or prepare or detected_kind(info) not in ("csv", "tsv", "json", "text", "sinex", "xml")
                     total_txt = f" ({limits.human(info.get('bytes_total'))})" if info.get("bytes_total") else ""
                     if detected_kind(info) == "zip" and info.get("bytes_total") and not info.get("ranges"):
                         _log(run_id, f"The server doesn't allow partial reads, so the whole archive{total_txt} is streamed once and cached "
@@ -770,12 +771,20 @@ def _run_handler(run_id: str, path: Path, detected: str, folder: Path, *, quick:
     claimed = registry.type_from_name(path.name)
     if remote:
         pass
-    elif claimed in ("parquet", "zip", "xlsx") and detected != ("zip" if claimed == "xlsx" else claimed):
+    elif claimed in ("parquet", "zip", "xlsx") and detected not in {"xlsx": ("xlsx", "zip"), "zip": ("zip", "xlsx", "ods")}.get(claimed, (claimed,)):
         raise FetchError(f"{path.name} is named .{claimed} but its content is {detected} (no {claimed.upper()} signature). "
                          "The file is damaged or mislabelled.", "format")
     members: list[dict] = []
     archive_info = None
     work = folder / "x"
+    if not remote and detected == "rar":
+        raise FetchError("RAR archives can't be opened here. Extract it on your computer and upload the data files, or a ZIP of them.", "format",
+                         limits.detail("format", None, actions=["upload"], format="rar"))
+    if not remote and detected in ("tar", "7z"):
+        _log(run_id, f"Expanding the {'tar' if detected == 'tar' else '7-Zip'} archive")
+        path = archive_mod.repack(path, detected, folder / "r", deadline=deadline, cancel=lambda: _check_cancel(run_id),
+                                  log=lambda line: _log(run_id, line))
+        detected = "zip"
     if remote:
         listing, pl = remote["listing"], remote["plan"]
         members, handler, selected = listing["members"], pl["handler"], remote["selected"]
@@ -790,6 +799,12 @@ def _run_handler(run_id: str, path: Path, detected: str, folder: Path, *, quick:
         _log(run_id, "Inspecting the archive")
         listing = archive_mod.inspect_path(path)
         members = listing["members"]
+        if archive_mod.has_inner_archives(members) and registry.plan(members, sample=quick, params=params)["handler"].key == "inspect":
+            _log(run_id, "The data is inside archives within the archive: expanding them")
+            path = archive_mod.repack(path, "zip", folder / "r", deadline=deadline, cancel=lambda: _check_cancel(run_id),
+                                      log=lambda line: _log(run_id, line))
+            listing = archive_mod.inspect_path(path)
+            members = listing["members"]
         for sk in listing["skipped"][:5]:
             _log(run_id, f"Skipped {sk['name']}: {sk['reason']}")
         pl = registry.plan(members, sample=quick, params=params)
@@ -810,17 +825,26 @@ def _run_handler(run_id: str, path: Path, detected: str, folder: Path, *, quick:
                         "candidates": _candidates(members), "selected": [m["name"] for m in selected][:50]}
         path.unlink(missing_ok=True)  # the expanded members are all the handler needs; free the disk
         root = work
-    elif detected in ("gzip", "compress", "sinex-gz") and not path.name.lower().endswith((".csv.gz", ".tsv.gz", ".json.gz")):
-        out = work / re.sub(r"\.(gz|z)$", "", path.name, flags=re.I)
+    elif detected in ("gzip", "compress", "sinex-gz", "bzip2", "xz") and not path.name.lower().endswith((".csv.gz", ".tsv.gz", ".json.gz")):
+        out = work / re.sub(r"\.(gz|z|bz2|xz)$", "", path.name, flags=re.I)
         work.mkdir(parents=True, exist_ok=True)
         _log(run_id, f"Decompressing {path.name}")
-        archive_mod.decompress(path, out, kind="compress" if detected == "compress" else "gzip")
+        archive_mod.decompress(path, out, kind={"compress": "compress", "bzip2": "bzip2", "xz": "xz"}.get(detected, "gzip"))
         inner = registry.sniff_path(out)
         members = [{"name": out.name, "size": out.stat().st_size, "type": inner}]
         pl = registry.plan(members, sample=quick, params=params)
         handler, paths, root = pl["handler"], [out] if pl["selected"] else [out], work
     else:
         t = "csv" if detected in ("gzip",) else detected
+        named = registry.type_from_name(path.name)
+        if named in registry.CONVERTED and t in ("binary", "text", "csv", "tsv", "unknown"):
+            t = named  # Stata, SAS transport and similar files have no reliable signature: trust the extension
+        if t == "xml":
+            from .formats import convert
+
+            if convert.is_xml_table(path):
+                t = "xmltable"
+                params = {**params, "_kind": "xmltable"}
         members = [{"name": path.name, "size": path.stat().st_size, "type": t}]
         pl = registry.plan(members, sample=quick, params=params)
         handler, paths, root = pl["handler"], [path], folder
@@ -838,7 +862,16 @@ def _run_handler(run_id: str, path: Path, detected: str, folder: Path, *, quick:
                        cancel=lambda: _check_cancel(run_id), log=lambda line: _log(run_id, line),
                        on_charts=charts_mark, known_total=known_total, partial=partial, method=method,
                        extra={"row_limit": QUICK_ROWS if quick else None, "pair_path": Path(params["_pair_path"]) if params.get("_pair_path") else None})
-    report = handler.analyze(job)
+    try:
+        report = handler.analyze(job)
+    except FetchError as exc:
+        # A scientific file whose layout can't be tabulated still gets a useful report: what it is and why it wasn't analyzed.
+        if handler.key != "tabular" or exc.kind not in ("format", "not_data") or not any(m["type"] in ("netcdf", "hdf5") for m in members):
+            raise
+        _log(run_id, f"Couldn't tabulate: {exc}. Showing an inspection instead.")
+        handler = registry.get("inspect")
+        job.extra["fallback_reason"] = str(exc)
+        report = handler.analyze(job)
     end = time.monotonic()
     timings["profile_ms"] = int(((marks.get("charts") or end) - t_profile) * 1000)
     timings["charts_ms"] = int((end - marks["charts"]) * 1000) if marks.get("charts") else 0
@@ -879,8 +912,10 @@ def _launch(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode
         _update(run_id, job={"rec": rec, "fetch": fetch, "mode": mode})
         _log(run_id, "Queued for the analysis worker")
         return
-    if INLINE:
-        _execute(run_id, rec, fetch, local, mode)
+    if INLINE or (RUN_MODE == "queue" and local is not None):
+        # A file uploaded straight to this instance exists only here (no shared disk on Vercel), and a background thread is
+        # frozen once the response is sent: analyze it within this request. Vercel caps such uploads at 4.5 MB, so it's quick.
+        _execute(run_id, rec, fetch, local, mode, **({"budget": config.INLINE_BUDGET_SECONDS} if RUN_MODE == "queue" else {}))
     else:
         threading.Thread(target=_execute, args=(run_id, rec, fetch, local, mode), daemon=True, name=f"analysis-{run_id}").start()
 
@@ -984,7 +1019,7 @@ def retry(run_id: str, mode: str | None = None, user: str | None = None, params:
         raise FetchError("Analysis not found.", "not_found")
     if not run.get("file_url"):
         raise FetchError("This analysis used an uploaded file, which isn't kept. Upload the file again.", "not_found")
-    rec = store.all_records().get(run["dataset_id"])
+    rec = store.get_record(run["dataset_id"])
     if not rec:
         raise FetchError("The dataset is no longer in the catalog.", "not_found")
     merged = {**(run.get("params") or {}), **(params or {})}

@@ -7,12 +7,18 @@
   overlays             facts verified by an analysis (fields, dates, formats) per dataset
   curated_records      the dataset record as it was when analyzed, so a live search result stays in
                        Curated Packs even after the live-search cache is gone
+  shared_live_*        live-search results (records, which query found them, provider status). Serverless instances
+                       don't share /tmp: a dataset found by one instance must open, list files and analyze on another.
 
 Backend:
   DATABASE_URL=postgres://...  -> PostgreSQL (Vercel: Neon from the Marketplace; or any Postgres)
   otherwise                     -> SQLite in DSP_STATE_DIR (local dev and Docker, on a named volume)
 
-Everything else (search index, live-search cache, link checks) is a rebuildable cache and stays in local SQLite.
+Everything else (search index, link checks) is a rebuildable cache and stays in local SQLite; live-search results are
+mirrored to shared_live_* and pulled into the local cache on a miss.
+
+Postgres connections are kept per thread and reused (opening one to Neon costs a TLS handshake, often 100-400 ms);
+prepared statements are off so the Neon pooler (PgBouncer, transaction mode) works.
 SQL here is written once with `?` placeholders and portable `insert ... on conflict` upserts.
 """
 from __future__ import annotations
@@ -61,6 +67,11 @@ TABLES = [
     """create table if not exists workers (
       name text primary key, kind text not null, started_at text not null, heartbeat_at text not null, current_run text,
       version text, blob_fp text, secret_fp text, db_fp text, host text)""",
+    "create table if not exists shared_live_records (id text primary key, json text not null, updated_at text not null)",
+    """create table if not exists shared_live_hits (query text not null, provider text not null, record_id text not null,
+      rank integer not null, fetched_at text not null, primary key (query, provider, record_id))""",
+    """create table if not exists shared_live_runs (query text not null, provider text not null, status text not null, detail text,
+      count integer not null default 0, ms integer not null default 0, fetched_at text not null, primary key (query, provider))""",
     """create table if not exists oauth_states (state text primary key, user_id text not null, verifier text not null,
       return_to text, created_at text not null)""",
 ]
@@ -89,21 +100,62 @@ def backend() -> str:
     return "postgres" if IS_POSTGRES else "sqlite"
 
 
+_local = threading.local()
+_IDLE_PING_SECONDS = 30.0
+
+
+def _pg_connect():
+    import psycopg
+    from psycopg.rows import dict_row
+
+    return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10, prepare_threshold=None)
+
+
+def _pg_drop() -> None:
+    con = getattr(_local, "con", None)
+    _local.con = None
+    if con is not None:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+def _pg_con():
+    """This thread's connection; reconnects when it is closed, and pings it first when it sat idle (Neon drops idle ones)."""
+    import time as _t
+
+    con = getattr(_local, "con", None)
+    if con is not None and not con.closed and _t.monotonic() - getattr(_local, "used", 0.0) > _IDLE_PING_SECONDS:
+        try:
+            con.execute("select 1")
+        except Exception:
+            _pg_drop()
+            con = None
+    if con is None or con.closed:
+        con = _local.con = _pg_connect()
+    _local.used = _t.monotonic()
+    return con
+
+
 @contextmanager
 def _raw():
     if IS_POSTGRES:
         import psycopg
-        from psycopg.rows import dict_row
 
-        con = psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10)
-    else:
-        config.STATE_DIR.mkdir(parents=True, exist_ok=True)
-        con = sqlite3.connect(SQLITE_PATH, timeout=15)
-        con.row_factory = sqlite3.Row
+        con = _pg_con()
+        try:
+            yield con
+        except psycopg.OperationalError:
+            _pg_drop()  # broken connection: the next call opens a fresh one
+            raise
+        return
+    config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(SQLITE_PATH, timeout=15)
+    con.row_factory = sqlite3.Row
     try:
         yield con
-        if not IS_POSTGRES:
-            con.commit()
+        con.commit()
     finally:
         con.close()
 
@@ -118,20 +170,33 @@ def init() -> None:
         if _ready:
             return
         with _raw() as con:
+            if IS_POSTGRES:  # one script on a cold start instead of ~30 round trips
+                script = TABLES + [f"alter table {t} add column if not exists {c} {d}" for t, c, d in MIGRATIONS]
+                # Instances that cold-start together would race "create table if not exists" (Postgres then reports a duplicate
+                # pg_type row): the transaction-scoped advisory lock lets one create the schema while the others wait.
+                with con.transaction():
+                    con.execute("select pg_advisory_xact_lock(7243019)")
+                    con.execute(";\n".join(script))
+                _ready = True
+                return
             for ddl in TABLES:
-                con.execute(ddl if IS_POSTGRES else ddl.replace(" bytea", " blob").replace("double precision", "real"))
+                con.execute(ddl.replace(" bytea", " blob").replace("double precision", "real"))
             for table, col, decl in MIGRATIONS:
-                if IS_POSTGRES:
-                    con.execute(f"alter table {table} add column if not exists {col} {decl}")
-                elif col not in [r[1] for r in con.execute(f"pragma table_info({table})").fetchall()]:
+                if col not in [r[1] for r in con.execute(f"pragma table_info({table})").fetchall()]:
                     con.execute(f"alter table {table} add column {col} {decl}")
         _ready = True
 
 
 def query(q: str, params: tuple = ()) -> list[dict]:
     init()
-    with _raw() as con:
-        return [dict(r) for r in con.execute(_sql(q), params).fetchall()]
+    for attempt in (0, 1):  # reads are safe to repeat once on a connection the server dropped
+        try:
+            with _raw() as con:
+                return [dict(r) for r in con.execute(_sql(q), params).fetchall()]
+        except Exception as exc:
+            if attempt or not IS_POSTGRES or type(exc).__name__ != "OperationalError":
+                raise
+    return []
 
 
 def one(q: str, params: tuple = ()) -> dict | None:
@@ -145,6 +210,19 @@ def execute(q: str, params: tuple = ()) -> None:
         con.execute(_sql(q), params)
 
 
+def execute_many(q: str, rows: list[tuple]) -> None:
+    """One statement for many parameter rows (one round trip per batch on Postgres)."""
+    if not rows:
+        return
+    init()
+    with _write_lock, _raw() as con:
+        if IS_POSTGRES:
+            with con.cursor() as cur:
+                cur.executemany(_sql(q), rows)
+        else:
+            con.executemany(q, rows)
+
+
 def execute_count(q: str, params: tuple = ()) -> int:
     """Like execute(), returning the number of rows changed (used for atomic claims)."""
     init()
@@ -154,7 +232,8 @@ def execute_count(q: str, params: tuple = ()) -> int:
 
 
 def reset_for_tests(tables: tuple[str, ...] = ("analysis_runs", "comparison_reports", "overlays", "curated_records", "users", "sessions",
-                                               "provider_connections", "oauth_states", "pack_runs", "run_artifacts", "workers")) -> None:
+                                               "provider_connections", "oauth_states", "pack_runs", "run_artifacts", "workers", "shared_live_records",
+                                               "shared_live_hits", "shared_live_runs")) -> None:
     init()
     with _raw() as con:
         for t in tables:

@@ -1,20 +1,13 @@
 import { MotionConfig } from "framer-motion";
+import type React from "react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Link, RouterProvider } from "react-router-dom";
 import Layout from "./components/Layout";
 import "./index.css";
-import AnalysisPage from "./pages/AnalysisPage";
-import DatasetRunPage from "./pages/DatasetRunPage";
-import SettingsPage from "./pages/SettingsPage";
-import ComparePage, { ComparisonReportPage } from "./pages/ComparePage";
-import CuratedPacks from "./pages/CuratedPacks";
-import DatasetPage from "./pages/DatasetPage";
-import Discover from "./pages/Discover";
-import LandingPage from "./pages/LandingPage";
-import PackPage from "./pages/PackPage";
-import { RunDetailPage, RunsPage } from "./pages/RunsPage";
-import SourcesPage from "./pages/SourcesPage";
+
+// Each page is its own chunk, loaded when first visited: the first load no longer downloads every page's code.
+const page = (load: () => Promise<Record<string, unknown>>, name = "default") => async () => ({ Component: (await load())[name] as React.ComponentType });
 
 function NotFound() {
   return (
@@ -29,20 +22,22 @@ function NotFound() {
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    // Shown only on the very first load, while the first page's code arrives.
+    hydrateFallbackElement: <div className="grid min-h-screen place-items-center text-ink-soft" role="status">Loading…</div>,
     children: [
-      { path: "/", element: <LandingPage /> },
-      { path: "/discover", element: <Discover /> },
-      { path: "/packs", element: <CuratedPacks /> },
-      { path: "/packs/:slug", element: <PackPage /> },
-      { path: "/datasets/:id", element: <DatasetPage /> },
-      { path: "/compare", element: <ComparePage /> },
-      { path: "/compare/:reportId", element: <ComparisonReportPage /> },
-      { path: "/analyses/:id", element: <AnalysisPage /> },
-      { path: "/datasets/:id/run", element: <DatasetRunPage /> },
-      { path: "/runs", element: <RunsPage /> },
-      { path: "/runs/:id", element: <RunDetailPage /> },
-      { path: "/sources", element: <SourcesPage /> },
-      { path: "/settings", element: <SettingsPage /> },
+      { path: "/", lazy: page(() => import("./pages/LandingPage")) },
+      { path: "/discover", lazy: page(() => import("./pages/Discover")) },
+      { path: "/packs", lazy: page(() => import("./pages/CuratedPacks")) },
+      { path: "/packs/:slug", lazy: page(() => import("./pages/PackPage")) },
+      { path: "/datasets/:id", lazy: page(() => import("./pages/DatasetPage")) },
+      { path: "/compare", lazy: page(() => import("./pages/ComparePage")) },
+      { path: "/compare/:reportId", lazy: page(() => import("./pages/ComparePage"), "ComparisonReportPage") },
+      { path: "/analyses/:id", lazy: page(() => import("./pages/AnalysisPage")) },
+      { path: "/datasets/:id/run", lazy: page(() => import("./pages/DatasetRunPage")) },
+      { path: "/runs", lazy: page(() => import("./pages/RunsPage"), "RunsPage") },
+      { path: "/runs/:id", lazy: page(() => import("./pages/RunsPage"), "RunDetailPage") },
+      { path: "/sources", lazy: page(() => import("./pages/SourcesPage")) },
+      { path: "/settings", lazy: page(() => import("./pages/SettingsPage")) },
       { path: "*", element: <NotFound /> },
     ],
   },

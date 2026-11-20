@@ -290,20 +290,138 @@ def upsert_live(records: list[dict], provider: str, query: str) -> list[str]:
             if target_id not in ids:
                 ids.append(target_id)
                 con.execute("insert or replace into live_hits values (?,?,?,?,?)", (query, provider, target_id, len(ids) - 1, stamp))
+        shared = [(r["id"], r["json"]) for r in con.execute(
+            f"select id, json from records where origin not in ('seed','pack') and id in ({','.join('?' * len(ids))})", ids)] if ids else []
     _invalidate()
+    _share_live(query, provider, ids, shared, stamp)
     return ids
 
 
-def record_live_run(query: str, provider: str, status: str, detail: str, count: int, ms: int) -> None:
+# ---------------------------------------------------------------- live results shared between instances
+# Each serverless instance has its own /tmp, so the local cache above only knows what *this* instance searched. Results
+# are mirrored to durable storage and pulled back on a miss: open, list files, upload and analyze then work on any instance.
+_hydrated: dict[str, float] = {}
+_HYDRATE_TTL = 20.0
+
+
+def _shared_enabled() -> bool:
+    return durable.IS_POSTGRES or SHARE_LOCAL
+
+
+SHARE_LOCAL = False  # tests turn this on to exercise the shared path on SQLite
+
+
+def _share_live(query: str, provider: str, ids: list[str], shared: list[tuple[str, str]], stamp: str) -> None:
+    if not _shared_enabled():
+        return
+    try:
+        durable.execute("delete from shared_live_hits where query=? and provider=?", (query, provider))
+        durable.execute_many("insert into shared_live_records (id, json, updated_at) values (?,?,?) "
+                             "on conflict (id) do update set json=excluded.json, updated_at=excluded.updated_at",
+                             [(rid, js, stamp) for rid, js in shared])
+        durable.execute_many("insert into shared_live_hits (query, provider, record_id, rank, fetched_at) values (?,?,?,?,?) "
+                             "on conflict (query, provider, record_id) do update set rank=excluded.rank, fetched_at=excluded.fetched_at",
+                             [(query, provider, rid, i, stamp) for i, rid in enumerate(ids)])
+    except Exception as exc:  # the search itself worked; sharing is best effort
+        _health["shareError"] = f"{type(exc).__name__}: {exc}"[:300]
+
+
+def _write_shared(con, rows: list[dict]) -> int:
+    """Write shared live records into the local cache without overwriting reviewed (seed/pack) records."""
+    n = 0
+    for row in rows:
+        rec = json.loads(row["json"])
+        have = con.execute("select origin from records where id=?", (rec["id"],)).fetchone()
+        if have and have["origin"] in ("seed", "pack"):
+            continue
+        _write(con, rec)
+        n += 1
+    return n
+
+
+def _shared_hits(query: str) -> list[dict] | None:
+    """Shared hits for a query; records this instance hasn't cached yet are copied in. None if storage is unreachable."""
+    try:
+        hits = durable.query("select * from shared_live_hits where query=?", (query,))
+        have = all_records()
+        missing = sorted({h["record_id"] for h in hits} - have.keys())
+        if missing:
+            recs = durable.query(f"select json from shared_live_records where id in ({','.join('?' * len(missing))})", tuple(missing))
+            with _lock, connect() as con:
+                con.executescript(SCHEMA)
+                _write_shared(con, recs)
+            _invalidate()
+        return hits
+    except Exception:
+        return None
+
+
+def _hydrate_query(query: str) -> None:
+    """Pull the shared hits (and their records) for one query into the local cache, at most every few seconds."""
+    import time as _t
+
+    if not _shared_enabled() or _t.monotonic() - _hydrated.get(query, -1e9) < _HYDRATE_TTL:
+        return
+    _hydrated[query] = _t.monotonic()
+    try:
+        hits = durable.query("select * from shared_live_hits where query=?", (query,))
+        runs = durable.query("select * from shared_live_runs where query=?", (query,))
+        ids = sorted({h["record_id"] for h in hits})
+        recs = durable.query(f"select json from shared_live_records where id in ({','.join('?' * len(ids))})", tuple(ids)) if ids else []
+    except Exception:
+        return
     with _lock, connect() as con:
-        con.execute("insert or replace into live_runs values (?,?,?,?,?,?,?)", (query, provider, status, detail[:400], count, ms, now()))
+        con.executescript(SCHEMA)
+        _write_shared(con, recs)
+        for h in hits:
+            con.execute("insert or replace into live_hits values (?,?,?,?,?)", (h["query"], h["provider"], h["record_id"], h["rank"], h["fetched_at"]))
+        for r in runs:
+            con.execute("insert or replace into live_runs values (?,?,?,?,?,?,?)",
+                        (r["query"], r["provider"], r["status"], r["detail"], r["count"], r["ms"], r["fetched_at"]))
+    _invalidate()
+
+
+def get_record(record_id: str) -> dict | None:
+    """One record by id: the local cache, then the shared live results (a dataset another instance found)."""
+    rec = all_records().get(record_id)
+    if rec is not None or not _shared_enabled():
+        return rec
+    try:
+        rows = durable.query("select json from shared_live_records where id=?", (record_id,))
+    except Exception:
+        return None
+    if not rows:
+        return None
+    with _lock, connect() as con:
+        con.executescript(SCHEMA)
+        _write_shared(con, rows)
+    _invalidate()
+    return all_records().get(record_id)
+
+
+def record_live_run(query: str, provider: str, status: str, detail: str, count: int, ms: int) -> None:
+    stamp = now()
+    with _lock, connect() as con:
+        con.execute("insert or replace into live_runs values (?,?,?,?,?,?,?)", (query, provider, status, detail[:400], count, ms, stamp))
+    if _shared_enabled() and status == "ok":
+        try:
+            durable.execute("insert into shared_live_runs (query, provider, status, detail, count, ms, fetched_at) values (?,?,?,?,?,?,?) "
+                            "on conflict (query, provider) do update set status=excluded.status, detail=excluded.detail, "
+                            "count=excluded.count, ms=excluded.ms, fetched_at=excluded.fetched_at",
+                            (query, provider, status, detail[:400], count, ms, stamp))
+        except Exception:
+            pass
 
 
 def live_run(query: str, provider: str) -> dict | None:
-    with connect() as con:
-        con.executescript(SCHEMA)
-        row = con.execute("select * from live_runs where query=? and provider=?", (query, provider)).fetchone()
-    return dict(row) if row else None
+    for attempt in (0, 1):
+        with connect() as con:
+            con.executescript(SCHEMA)
+            row = con.execute("select * from live_runs where query=? and provider=?", (query, provider)).fetchone()
+        if row or attempt:
+            return dict(row) if row else None
+        _hydrate_query(query)  # another instance may have searched this already: reuse its results
+    return None
 
 
 def live_hits(query: str) -> dict[str, dict]:
@@ -313,6 +431,10 @@ def live_hits(query: str) -> dict[str, dict]:
     with connect() as con:
         con.executescript(SCHEMA)
         rows = con.execute("select * from live_hits where query=? order by rank", (query,)).fetchall()
+    if _shared_enabled():  # what every instance found for this query (provider searches run on different instances)
+        shared = _shared_hits(query)
+        if shared is not None:
+            rows = sorted({(r["provider"], r["record_id"]): r for r in [*map(dict, rows), *shared]}.values(), key=lambda r: r["rank"])
     out: dict[str, dict] = {}
     for r in rows:
         cur = out.get(r["record_id"])

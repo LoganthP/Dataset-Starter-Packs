@@ -10,5 +10,11 @@ nbformat==5.11.1
 pillow==12.3.0
 cryptography==50.0.1
 unlzw3==0.2.3
+# More file formats: Excel 97-2003, OpenDocument, HDF5 / NetCDF-4 (also on Vercel); SPSS and 7-Zip (Docker / worker only)
+xlrd==2.0.2
+odfpy==1.4.1
+h5py==3.16.0
+pyreadstat==1.3.8
+py7zr==1.1.4
 # Durable storage when DATABASE_URL points at Postgres (Neon on Vercel, or any Postgres)
 psycopg[binary]==3.3.9

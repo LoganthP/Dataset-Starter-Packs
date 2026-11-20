@@ -19,15 +19,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 TABULAR = ("csv", "tsv", "json", "parquet", "xlsx")
+# Read by converting to a table first (formats/convert.py): spreadsheets, statistics packages, scientific arrays, XML records.
+CONVERTED = ("xls", "ods", "stata", "sas", "spss", "netcdf", "hdf5", "xmltable")
 IMAGE = ("png", "jpeg", "tiff", "bmp", "webp")
 ANNOTATION = ("coco", "yolo", "dota", "voc", "labelme", "txt", "json", "xml", "yaml")
 
 _EXT = [(".snx.gz", "sinex-gz"), (".sinex.gz", "sinex-gz"), (".snx.z", "sinex-z"), (".snx", "sinex"), (".sinex", "sinex"),
-        (".parquet", "parquet"), (".csv.gz", "csv"), (".csv", "csv"), (".tsv", "tsv"), (".tab", "tsv"), (".jsonl", "json"),
-        (".ndjson", "json"), (".geojson", "json"), (".json", "json"), (".xlsx", "xlsx"), (".zip", "zip"), (".png", "png"),
-        (".jpg", "jpeg"), (".jpeg", "jpeg"), (".tif", "tiff"), (".tiff", "tiff"), (".bmp", "bmp"), (".webp", "webp"),
-        (".xml", "xml"), (".txt", "txt"), (".yaml", "yaml"), (".yml", "yaml"), (".nc", "netcdf"), (".h5", "hdf5"), (".hdf5", "hdf5"),
-        (".gz", "gzip"), (".z", "compress"), (".7z", "7z"), (".rar", "rar"), (".tar", "tar"), (".pdf", "pdf"), (".md", "text")]
+        (".parquet", "parquet"), (".pq", "parquet"), (".csv.gz", "csv"), (".csv", "csv"), (".tsv", "tsv"), (".tab", "tsv"), (".jsonl", "json"),
+        (".ndjson", "json"), (".geojson", "json"), (".json", "json"), (".xlsx", "xlsx"), (".xlsm", "xlsx"), (".xls", "xls"), (".ods", "ods"),
+        (".dta", "stata"), (".sas7bdat", "sas"), (".xpt", "sas"), (".sav", "spss"), (".zsav", "spss"),
+        (".tar.gz", "tar"), (".tgz", "tar"), (".tar.bz2", "tar"), (".tbz2", "tar"), (".tar.xz", "tar"), (".txz", "tar"), (".tar", "tar"),
+        (".zip", "zip"), (".png", "png"), (".jpg", "jpeg"), (".jpeg", "jpeg"), (".tif", "tiff"), (".tiff", "tiff"), (".bmp", "bmp"),
+        (".webp", "webp"), (".xml", "xml"), (".txt", "txt"), (".yaml", "yaml"), (".yml", "yaml"), (".nc", "netcdf"), (".nc4", "netcdf"),
+        (".cdf", "netcdf"), (".h5", "hdf5"), (".hdf5", "hdf5"), (".he5", "hdf5"), (".gz", "gzip"), (".bz2", "bzip2"), (".xz", "xz"),
+        (".z", "compress"), (".7z", "7z"), (".rar", "rar"), (".pdf", "pdf"), (".md", "text")]
 
 
 def type_from_name(name: str) -> str:
@@ -44,11 +49,21 @@ def sniff(head: bytes, name: str = "") -> str:
     sigs = [(b"PAR1", "parquet"), (b"PK\x03\x04", "zip"), (b"PK\x05\x06", "zip"), (b"\x1f\x8b", "gzip"), (b"\x1f\x9d", "compress"),
             (b"\x89PNG\r\n\x1a\n", "png"), (b"\xff\xd8\xff", "jpeg"), (b"II*\x00", "tiff"), (b"MM\x00*", "tiff"), (b"BM", "bmp"),
             (b"CDF\x01", "netcdf"), (b"CDF\x02", "netcdf"), (b"\x89HDF\r\n\x1a\n", "hdf5"), (b"7z\xbc\xaf", "7z"), (b"Rar!", "rar"),
-            (b"%PDF", "pdf"), (b"RIFF", "webp")]
+            (b"%PDF", "pdf"), (b"RIFF", "webp"), (b"BZh", "bzip2"), (b"\xfd7zXZ\x00", "xz"), (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", "ole"),
+            (b"$FL2", "spss"), (b"$FL3", "spss"), (b"<stata_dta>", "stata"),
+            (b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xc2\xea\x81\x60\xb3\x14\x11\xcf\xbd\x92\x08\x00\x09\xc7\x31\x8c\x18\x1f\x10\x11", "sas")]
     for sig, t in sigs:
         if h.startswith(sig):
             if t == "gzip" and ".snx" in name.lower():
                 return "sinex-gz"
+            if t == "gzip" and type_from_name(name) == "tar":
+                return "tar"
+            if t in ("bzip2", "xz") and type_from_name(name) == "tar":
+                return "tar"
+            if t == "ole":  # Excel 97-2003 (and other old Office files)
+                return "xls" if type_from_name(name) in ("xls", "unknown") else type_from_name(name)
+            if t == "hdf5" and type_from_name(name) == "netcdf":
+                return "netcdf"  # NetCDF-4 is HDF5 inside
             return t
     if len(h) > 262 and h[257:262] == b"ustar":
         return "tar"
@@ -78,7 +93,33 @@ def sniff(head: bytes, name: str = "") -> str:
 
 def sniff_path(path: Path) -> str:
     with open(path, "rb") as fh:
-        return sniff(fh.read(8192), path.name)
+        t = sniff(fh.read(8192), path.name)
+    if t == "zip":  # Excel and OpenDocument files are ZIP containers: look inside before treating them as archives
+        import zipfile
+
+        try:
+            with zipfile.ZipFile(path) as zf:
+                names = set(zf.namelist())
+                if "xl/workbook.xml" in names:
+                    return "xlsx"
+                if "mimetype" in names and zf.read("mimetype").startswith(b"application/vnd.oasis.opendocument.spreadsheet"):
+                    return "ods"
+        except (zipfile.BadZipFile, OSError, KeyError):
+            pass
+    if t in ("gzip", "bzip2", "xz") and type_from_name(path.name) != "tar":  # a compressed tar without .tar in its name
+        import bz2
+        import gzip
+        import lzma
+
+        opener = {"gzip": gzip.open, "bzip2": bz2.open, "xz": lzma.open}[t]
+        try:
+            with opener(path, "rb") as fh:
+                head = fh.read(512)
+            if len(head) > 262 and head[257:262] == b"ustar":
+                return "tar"
+        except (OSError, EOFError, lzma.LZMAError):
+            pass
+    return t
 
 
 @dataclass

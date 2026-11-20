@@ -22,9 +22,13 @@ No Docker or PC needs to stay on for samples. Add a worker only if you want full
 
 1. Project → **Storage** → **Create Database** (or **Connect Store**) → **Neon**.
 2. Tick **Production** (and **Preview** if you use previews). Leave the **environment variable prefix empty**, so it creates `DATABASE_URL`. (A custom prefix such as `STORAGE_` also works now, as long as there's only one.)
-3. Check **Settings → Environment Variables** lists `DATABASE_URL` for **Production**.
+3. Check **Settings → Environment Variables** lists `DATABASE_URL` for **Production** *and* **Preview**. Each environment needs it: a
+   deployment without it can't share runs or search results between requests, and every page shows a yellow "isn't fully set up" banner.
+4. Speed: put the function next to the database. Note the Neon region (e.g. `aws-ap-southeast-1`, Singapore) and add the closest
+   Vercel region to `vercel.json`, e.g. `"regions": ["sin1"]` (Mumbai `bom1`, Frankfurt `fra1`, Washington `iad1`). `/api/diagnostics`
+   shows the measured `database.roundTripMs`; it should be under ~10 ms.
 
-## 3. Connect Vercel Blob (for uploads larger than 95 MB)
+## 3. Connect Vercel Blob (for uploads larger than 4 MB)
 
 1. Project → **Storage** → **Create** → **Blob**. Choose **Private** access.
 2. Connect it to **Production** (and Preview). This creates `BLOB_READ_WRITE_TOKEN`.
@@ -108,8 +112,11 @@ python -m app.worker
 | `/api/health` shows `"storage":"sqlite"` | `DATABASE_URL` missing for Production, or no redeploy since adding it | Step 2, then redeploy |
 | "Waiting for a worker: none is connected" on a full analysis or real-data pack run | These are too large for the site itself | Start a worker (step 6) or use **Sample** |
 | A sample run stays queued | The browser tab was closed before it started, or `/api/diagnostics` shows `inlineRuns:false` | Reopen the run page (it restarts); check `DATABASE_URL` is set for Production |
-| Build fails with a size error | The Python bundle (about 450 MB with the starter-pack libraries) is over Vercel's limit | Add env `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` (large functions), or set `DSP_INLINE_RUNS=0` and use a worker |
+| Build fails with a size error | The Python bundle (about 475 MB with the starter-pack and file-format libraries) is over Vercel's 500 MB limit | Add env `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` (large functions), or set `DSP_INLINE_RUNS=0` and use a worker |
 | "The worker and this app have different DATABASE_URL / BLOB_READ_WRITE_TOKEN / DSP_SECRET_KEY values" | Worker `.env` differs from Vercel Production | Copy the value from Vercel again and restart the worker |
 | Upload says the token expired or was rejected | Wrong or rotated `BLOB_READ_WRITE_TOKEN` | Reconnect Blob in Vercel, redeploy, update the worker |
 | Pack runs are disabled on the site | No database on this deployment | Step 2 and redeploy |
+| "Dataset '…' not found" when opening, listing files or uploading for a dataset found by live search | Older deployment: search results lived only in the instance that searched | Redeploy this version (results are shared through Neon) |
+| Pages slow; `/api/diagnostics` note says each query takes 100+ ms | Function and database in different regions | Set `"regions"` in `vercel.json` (step 2.4) |
+| An SPSS (`.sav`) or 7-Zip upload says it needs the worker | pyreadstat and py7zr are left out of the Vercel bundle (size limit) | Run it with the worker, or save as CSV/Excel/ZIP |
 | `--doctor` says `[FAIL] Blob` | Token belongs to another store or was revoked | Use the Production token from Vercel |

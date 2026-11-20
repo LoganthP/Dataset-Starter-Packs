@@ -15,7 +15,8 @@ from .adapters import huggingface
 from .adapters.http import AdapterError
 from .limits import MAX_TRANSFER_BYTES as MAX_BYTES  # noqa: E402  one limit for every transfer (limits.py)
 
-SUPPORTED = (".csv", ".tsv", ".tab", ".txt", ".parquet", ".json", ".jsonl", ".ndjson", ".geojson", ".zip", ".gz", ".xlsx")
+SUPPORTED = (".csv", ".tsv", ".tab", ".txt", ".parquet", ".json", ".jsonl", ".ndjson", ".geojson", ".zip", ".gz", ".xlsx", ".xlsm", ".xls", ".ods",
+             ".dta", ".sas7bdat", ".xpt", ".sav", ".nc", ".nc4", ".h5", ".hdf5", ".tar", ".tgz", ".bz2", ".xz", ".7z", ".xml")
 
 
 class ImportError_(RuntimeError):

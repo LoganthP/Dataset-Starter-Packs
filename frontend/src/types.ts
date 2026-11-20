@@ -615,6 +615,8 @@ export interface Capabilities {
   worker?: { state: QueueInfo["state"]; message: string };
   kaggleOAuth?: boolean;
   formats?: { key: string; label: string; description: string }[];
+  /** Set when the deployment is misconfigured in a way that breaks runs (e.g. Vercel without its database). */
+  setupProblem?: string | null;
 }
 
 export interface LiveProvider {

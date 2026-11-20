@@ -1,11 +1,31 @@
 import { Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
+import { Link, Outlet, ScrollRestoration, useLocation, useNavigation } from "react-router-dom";
+import { useDiscoverMeta } from "../api";
 import { useAccount } from "../lib/account";
 import { rememberSectionUrl, sectionHref } from "../lib/session";
 import { useShortlist } from "../lib/shortlist";
 import { type ThemePref, useTheme } from "../lib/theme";
 import ShortlistTray from "./discover/ShortlistTray";
+
+/** Pages load on first visit: a thin bar shows the next page is on its way. */
+function PageLoading() {
+  const busy = useNavigation().state === "loading";
+  if (!busy) return null;
+  return <div aria-hidden className="fixed inset-x-0 top-0 z-50 h-1 animate-pulse bg-peri" />;
+}
+
+/** A deployment that can't run anything says so on every page, with the fix, instead of failing run by run. */
+function SetupBanner() {
+  const problem = useDiscoverMeta()?.capabilities?.setupProblem;
+  if (!problem) return null;
+  return (
+    <div role="alert" className="mb-5 rounded-2xl border border-amber-400/60 bg-amber-100/80 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+      <p className="font-bold">This deployment isn't fully set up</p>
+      <p className="mt-0.5">{problem}</p>
+    </div>
+  );
+}
 
 function Logo() {
   return (
@@ -97,10 +117,11 @@ export default function Layout() {
   return (
     <>
       <div className="backdrop" aria-hidden />
+      <PageLoading />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 btn-ghost">
         Skip to content
       </a>
-      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6">
+      <header className="header-fade sticky top-0 z-30 px-3 pb-2 pt-3 sm:px-6">
         <nav className="glass-strong mx-auto flex max-w-7xl items-center gap-2 rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
           <Link to="/" className="flex items-center gap-2.5 rounded-xl pr-2">
             <Logo />
@@ -121,6 +142,7 @@ export default function Layout() {
         </nav>
       </header>
       <main id="main" className="mx-auto max-w-7xl px-3 pb-28 pt-6 sm:px-6">
+        <SetupBanner />
         <Outlet />
       </main>
       <ShortlistTray />

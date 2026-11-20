@@ -18,7 +18,10 @@ from pathlib import Path
 
 from .http import get_json
 
-LIST_URL = "https://www.kaggle.com/api/v1/datasets/list"
+
+def _list_url() -> str:
+    return os.getenv("KAGGLE_API_BASE", "https://www.kaggle.com").rstrip("/") + "/api/v1/datasets/list"
+
 ALLOWED = ("cc0", "public domain", "cc by 4.0", "cc-by", "attribution 4.0", "cc by-sa", "odbl", "open database", "mit", "apache", "open government")
 
 
@@ -80,6 +83,6 @@ def normalize(item: dict) -> dict:
 
 
 def search(query: str, limit: int = 8) -> list[dict]:
-    data = get_json(f"{LIST_URL}?{urllib.parse.urlencode({'search': query, 'page': 1})}", headers=_auth_header())
+    data = get_json(f"{_list_url()}?{urllib.parse.urlencode({'search': query, 'page': 1})}", headers=_auth_header())
     items = data if isinstance(data, list) else data.get("datasets", [])
     return [normalize(i) for i in items[:limit] if i.get("ref")]

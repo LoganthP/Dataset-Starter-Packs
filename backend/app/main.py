@@ -81,6 +81,22 @@ def worker_status():
     return queueing.status()
 
 
+def _db_latency() -> dict:
+    """Median of three round trips on the reused connection (the first call also shows the connect time)."""
+    try:
+        t0 = time.perf_counter()
+        durable.query("select 1 as x")
+        first = (time.perf_counter() - t0) * 1000
+        rts = []
+        for _ in range(3):
+            t = time.perf_counter()
+            durable.query("select 1 as x")
+            rts.append((time.perf_counter() - t) * 1000)
+        return {"firstQueryMs": round(first, 1), "roundTripMs": round(sorted(rts)[1], 1)}
+    except Exception as exc:
+        return {"error": type(exc).__name__}
+
+
 @app.get("/api/diagnostics")
 def diagnostics(deep: bool = False):
     """Deployment self-check with no secrets in it: storage, run mode, worker, Blob. `?deep=1` also asks Blob whether
@@ -91,7 +107,13 @@ def diagnostics(deep: bool = False):
            "worker": worker, "blob": blob.status(),
            "secretKeySet": bool(os.getenv("DSP_SECRET_KEY")),
            "maxTransferBytes": limits.MAX_TRANSFER_BYTES,
+           "region": os.getenv("VERCEL_REGION"), "database": _db_latency(),
            "problems": []}
+    lat = out["database"].get("roundTripMs")
+    if lat and lat > 60:
+        out.setdefault("notes", []).append(f"Each database query takes about {lat:.0f} ms from this function's region "
+                                           f"({out['region'] or 'unknown'}). Put the function next to the database: set \"regions\" in "
+                                           "vercel.json to the Vercel region closest to your Neon region (see DEPLOY_VERCEL.md).")
     if config.RUN_MODE == "queue":
         if not durable.IS_POSTGRES:
             near = sorted(k for k in os.environ if "DATABASE_URL" in k or "POSTGRES_URL" in k)  # names only, never values
@@ -115,15 +137,25 @@ def diagnostics(deep: bool = False):
     return out
 
 
+def _setup_problem() -> str | None:
+    if config.ON_VERCEL and not config.HAS_SHARED_DB:
+        return ("No database is connected to this deployment, so analyses, starter-pack runs and datasets found by live search can't "
+                "be shared between requests. In Vercel open the project's Storage tab, connect Neon Postgres with this environment "
+                f"({os.getenv('VERCEL_ENV') or 'production'}) ticked, then redeploy.")
+    return None
+
+
 def capabilities() -> dict:
     lim = limits.capabilities()
     return {"packRuns": config.PACK_RUNS_ENABLED, "storage": durable.backend(), "runMode": analysis.RUN_MODE,
             "worker": queueing.status() if config.RUN_MODE == "queue" else None,
             "inlineRuns": inline.enabled(),
             "uploadMode": "blob" if blob.enabled() else "direct", **lim,
-            # Vercel Functions accept request bodies up to 100 MB; larger files go browser -> private Blob (multipart) when a store is connected.
-            "directUploadMaxMB": min(95, lim["maxUploadMB"]) if config.ON_VERCEL else lim["maxUploadMB"],
+            # Vercel Functions reject request bodies over 4.5 MB (413 FUNCTION_PAYLOAD_TOO_LARGE); larger files go browser -> private
+            # Blob (multipart) when a store is connected.
+            "directUploadMaxMB": 4 if config.ON_VERCEL else lim["maxUploadMB"],
             "kaggleOAuth": kaggle_connect.oauth_available(),
+            "setupProblem": _setup_problem(),
             "formats": [{"key": h.key, "label": h.label, "description": h.description} for h in format_registry.handlers()]}
 
 
@@ -396,7 +428,7 @@ def get_dataset(record_id: str, request: Request):
 
 @app.post("/api/datasets/{record_id}/check")
 def check_dataset_source(record_id: str):
-    rec = catalog_store.all_records().get(record_id)
+    rec = catalog_store.get_record(record_id)
     if rec is None:
         raise HTTPException(404, f"Dataset {record_id!r} not found")
     result = sources.probe_link(rec["canonicalUrl"], kaggle=rec["provider"] == "Kaggle")
@@ -421,7 +453,7 @@ def live_search(provider: str, q: str = "", topic: str | None = None, refresh: b
 
 # ---------------------------------------------------------------- preview + file import (on demand)
 def _record_or_404(record_id: str) -> dict:
-    rec = catalog_store.all_records().get(record_id)
+    rec = catalog_store.get_record(record_id)
     if rec is None:
         raise HTTPException(404, f"Dataset {record_id!r} not found")
     return rec
@@ -644,7 +676,9 @@ async def analyze_upload(record_id: str, request: Request, file: UploadFile = Fi
                                                      "(DSP_MAX_TRANSFER_BYTES).", "kind": "too_large",
                                           "detail": limits.detail("transfer", size, actions=["open_source"])})
             out.write(chunk)
-    return {"runId": analysis.start_from_upload(rec, target, user=accounts.user_id(request))}
+    from starlette.concurrency import run_in_threadpool
+
+    return {"runId": await run_in_threadpool(analysis.start_from_upload, rec, target, user=accounts.user_id(request))}
 
 
 @app.get("/api/analyses")
@@ -671,7 +705,7 @@ def get_analysis(run_id: str, view: Literal["full", "lite"] = "full"):
         run["queue"] = queueing.queue_info("analysis_runs", run["created_at"], run_id, inline_ok=inline_ok)
     if view == "lite" and run.get("report"):
         run["report"] = {k: v for k, v in run["report"].items() if k != "preview"} | {"preview_deferred": len(run["report"].get("preview") or [])}
-    rec = catalog_store.all_records().get(run["dataset_id"])
+    rec = catalog_store.get_record(run["dataset_id"])
     run["dataset"] = {"id": run["dataset_id"], "title": rec["title"] if rec else run["dataset_id"], "exists": rec is not None}
     run["isLatest"] = analysis.latest_successful().get(run["dataset_id"], {}).get("runId") == run_id
     return run
@@ -859,4 +893,13 @@ if config.FRONTEND_DIST.exists():
         candidate = (config.FRONTEND_DIST / full_path).resolve()
         if full_path and candidate.is_file() and config.FRONTEND_DIST.resolve() in candidate.parents:
             return FileResponse(candidate)
-        return FileResponse(config.FRONTEND_DIST / "index.html")
+        # The page shell must be revalidated so a new deployment's asset names are picked up at once.
+        return FileResponse(config.FRONTEND_DIST / "index.html", headers={"Cache-Control": "no-cache"})
+
+    @app.middleware("http")
+    async def _cache_hashed_assets(request: Request, call_next):
+        """Vite names assets by content hash: they never change, so browsers may keep them for a year."""
+        response = await call_next(request)
+        if request.url.path.startswith("/assets/") and response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response

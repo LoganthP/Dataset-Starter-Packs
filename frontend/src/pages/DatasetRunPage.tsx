@@ -232,7 +232,8 @@ export default function DatasetRunPage() {
           <p className="mt-3 text-[15px] leading-relaxed text-warn-ink">
             A sample reads the first 1,000 rows, or every k-th image of an image archive, in about a minute. Use it to check fields, labels and formats; run the full analysis for totals.
           </p>
-          <p className="mt-auto pt-4 text-sm text-warn-ink">The file type is detected from its content. Tables, images, SINEX and orbit files each get their own report.</p>
+          <p className="mt-auto pt-4 text-sm text-warn-ink">The file type is detected from its content: CSV, Excel, Parquet, JSON, XML, Stata, SAS,
+            NetCDF, HDF5, images and SINEX, also inside ZIP, tar or gzip archives.</p>
         </aside>
       </motion.header>
 
@@ -334,7 +335,7 @@ export default function DatasetRunPage() {
                   <p className="text-xs text-ink-soft">Nothing was started.</p>
                 </div>
               )}
-              {filesError && <ErrorBox message={`Couldn't list files: ${filesError}`} />}
+              {filesError && !startError?.message.includes(filesError) && <ErrorBox message={`Couldn't list files: ${filesError}`} />}
             </div>
 
             <div className="glass flex min-h-[340px] flex-col rounded-3xl p-5">

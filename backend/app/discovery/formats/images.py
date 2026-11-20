@@ -40,7 +40,7 @@ class Images(Handler):
 
     def score(self, members: list[dict]) -> float:
         imgs = [m for m in members if m["type"] in IMAGE]
-        if len(imgs) < 5:
+        if len(imgs) < 5 and not (imgs and len(imgs) == len(members)):  # a few images alone (one photo) still get an image report
             return 0.0
         useful = sum(1 for m in members if m["type"] in IMAGE or _is_annotation(m))
         return 0.5 + 0.5 * useful / len(members)

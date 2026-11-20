@@ -5,11 +5,11 @@ from __future__ import annotations
 from .registry import Handler, Job, describe, register, sniff_path
 
 NEXT = {
-    "netcdf": "NetCDF needs a scientific-array handler (variables, dimensions, time axis). Export a variable to CSV or Parquet to analyze it here.",
-    "hdf5": "HDF5 needs a scientific-array handler. Export the table you need to CSV or Parquet.",
-    "7z": "7-Zip archives can't be opened here. Extract it and upload the data files (or a ZIP).",
+    "netcdf": "This NetCDF file couldn't be turned into a table (no variables with a shared length or grid). Export a variable to CSV "
+              "or Parquet to analyze it here.",
+    "hdf5": "This HDF5 file couldn't be turned into a table. Export the dataset you need to CSV or Parquet.",
+    "7z": "7-Zip archives can't be opened on this deployment. Extract it and upload the data files (or a ZIP).",
     "rar": "RAR archives can't be opened here. Extract it and upload the data files (or a ZIP).",
-    "tar": "TAR archives aren't expanded yet. Repack as ZIP or upload the data files.",
     "pdf": "This is documentation, not data. Open the source for the data files.",
     "html": "The source returned a web page instead of a file. It probably needs sign-in: open the source and download the file.",
 }
@@ -32,8 +32,11 @@ class Inspect(Handler):
         kinds = describe(members)["types"]
         main = kinds[0]["type"] if kinds else "unknown"
         files = sorted(members, key=lambda m: -(m.get("size") or 0))[:200]
+        reason = job.extra.get("fallback_reason")
         hint = NEXT.get(main) or ("Choose the files to analyze from the list, or pick an analysis type." if len(members) > 1 else
                                   "No analyzer for this type yet. Open the source for another format.")
+        if reason:
+            hint = f"{reason} {hint}"
         return {"kind": "inspection", "coverage": "inspection", "sample_method": None, "rows_total": None, "rows_analyzed": 0,
                 "columns": [], "rows_skipped": 0, "skip_reasons": [], "duplicate_rows": None, "duplicate_pct": None, "missing_pct": 0.0,
                 "date_coverage": None, "preview": [], "insights": None,

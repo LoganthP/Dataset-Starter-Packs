@@ -84,15 +84,21 @@
 @layer components {
   .glass {
     background: rgb(var(--c-white) / var(--glass-a));
-    backdrop-filter: blur(18px) saturate(160%);
+    /* Prefixed first: the minifier keeps only the last of the pair, and Chrome reads only the unprefixed one. */
     -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid rgb(var(--c-white) / var(--glass-border-a));
     @apply shadow-glass;
   }
+  /* Behind the sticky header: content scrolling up fades out instead of showing between the header and a sticky tab bar. */
+  .header-fade {
+    background: linear-gradient(to bottom, var(--page) 0%, var(--page) 72%, transparent 100%);
+  }
   .glass-strong {
     background: rgb(var(--c-white) / var(--glass-strong-a));
-    backdrop-filter: blur(22px) saturate(170%);
+    /* Prefixed first: the minifier keeps only the last of the pair, and Chrome reads only the unprefixed one. */
     -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
     border: 1px solid rgb(var(--c-white) / .95);
     @apply shadow-glass;
   }

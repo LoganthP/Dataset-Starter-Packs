@@ -29,10 +29,14 @@ from .adapters import huggingface
 from .adapters import kaggle as kaggle_ad
 from .adapters.http import AdapterError, get_json, get_text
 
-ANALYZABLE = ("csv", "tsv", "parquet", "json", "zip", "xlsx", "sinex", "sinex-gz", "sinex-z")
+ANALYZABLE = ("csv", "tsv", "parquet", "json", "zip", "xlsx", "sinex", "sinex-gz", "sinex-z", "xls", "ods", "stata", "sas", "spss", "netcdf",
+              "hdf5", "tar", "gz", "bz2", "xz", "7z", "xml")
 _EXT = ((".snx.gz", "sinex-gz"), (".sinex.gz", "sinex-gz"), (".snx.z", "sinex-z"), (".snx", "sinex"), (".sinex", "sinex"), (".parquet", "parquet"), (".csv.gz", "csv"), (".csv.zip", "zip"), (".csv", "csv"), (".tsv", "tsv"), (".tab", "tsv"), (".jsonl", "json"),
-        (".ndjson", "json"), (".geojson", "json"), (".json", "json"), (".zip", "zip"), (".xlsx", "xlsx"), (".xls", "xls"), (".txt", "txt"),
-        (".pdf", "pdf"), (".nc", "netcdf"), (".h5", "hdf5"), (".shp", "shp"), (".gz", "gz"), (".7z", "7z"), (".rar", "rar"), (".docx", "docx"))
+        (".ndjson", "json"), (".geojson", "json"), (".json", "json"), (".zip", "zip"), (".xlsx", "xlsx"), (".xlsm", "xlsx"), (".xls", "xls"), (".ods", "ods"), (".dta", "stata"),
+        (".sas7bdat", "sas"), (".xpt", "sas"), (".sav", "spss"), (".tar.gz", "tar"), (".tgz", "tar"), (".tar.bz2", "tar"), (".tar.xz", "tar"),
+        (".tar", "tar"), (".txt", "txt"), (".xml", "xml"), (".pdf", "pdf"), (".nc", "netcdf"), (".nc4", "netcdf"), (".h5", "hdf5"),
+        (".hdf5", "hdf5"), (".he5", "hdf5"), (".shp", "shp"), (".gz", "gz"), (".bz2", "bz2"), (".xz", "xz"), (".7z", "7z"), (".rar", "rar"),
+        (".docx", "docx"))
 _MIME = {"text/csv": "csv", "application/csv": "csv", "application/vnd.apache.parquet": "parquet", "application/x-parquet": "parquet",
          "application/json": "json", "application/zip": "zip", "text/tab-separated-values": "tsv", "application/pdf": "pdf",
          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx"}

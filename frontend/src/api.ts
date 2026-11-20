@@ -186,10 +186,26 @@ export const api = {
 export const searchCache = new SessionCache<SearchResponse>("dsp:search");
 let metaCache: DiscoverMeta | null = null;
 
+// One /api/discover/meta request shared by every component on the page, refreshed at most once a minute
+// (each component used to fetch it on mount: several identical requests per page, each a function call on Vercel).
+let metaInflight: Promise<DiscoverMeta> | null = null;
+let metaAt = 0;
+function loadMeta(): Promise<DiscoverMeta> {
+  if (metaCache && Date.now() - metaAt < 60_000) return Promise.resolve(metaCache);
+  if (!metaInflight) {
+    metaInflight = api.discoverMeta()
+      .then((m) => { metaCache = m; metaAt = Date.now(); return m; })
+      .finally(() => { metaInflight = null; });
+  }
+  return metaInflight;
+}
+
 export function useDiscoverMeta() {
   const [meta, setMeta] = useState<DiscoverMeta | null>(metaCache);
   useEffect(() => {
-    api.discoverMeta().then((m) => { metaCache = m; setMeta(m); }).catch(() => { });
+    let live = true;
+    loadMeta().then((m) => { if (live) setMeta(m); }).catch(() => { });
+    return () => { live = false; };
   }, []);
   return meta;
 }

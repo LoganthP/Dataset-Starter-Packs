@@ -158,7 +158,7 @@ export default function DataAccessPanel({ d, compact = false, autoFiles = false 
         {!files && busy !== "files" && (
           <button className="btn-ghost" disabled={!!busy} onClick={() => listFiles()}><BarChart3 size={15} /> Find files to analyze</button>
         )}
-        <input ref={upload} type="file" accept=".csv,.tsv,.tab,.txt,.parquet,.json,.jsonl,.ndjson,.geojson,.xlsx,.zip,.gz" className="hidden"
+        <input ref={upload} type="file" accept=".csv,.tsv,.tab,.txt,.parquet,.json,.jsonl,.ndjson,.geojson,.xlsx,.xlsm,.xls,.ods,.dta,.sas7bdat,.xpt,.sav,.nc,.nc4,.h5,.hdf5,.xml,.zip,.gz,.tgz,.tar,.bz2,.xz,.7z,.png,.jpg,.jpeg,.tif,.tiff" className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) void act("upload", async () => open((await api.analyzeUpload(d.id, f, caps, setProgress)).runId));

@@ -21,6 +21,11 @@ dependencies = [
   "matplotlib==3.11.2",
   "scikit-learn==1.9.1",
   "kagglehub==1.0.3",
+  # Readers for more file formats (formats/convert.py): Excel 97-2003, OpenDocument, HDF5 / NetCDF-4.
+  # SPSS (pyreadstat) and 7-Zip (py7zr) are in requirements-api.txt for Docker only: the Vercel bundle is near its 500 MB limit.
+  "xlrd==2.0.2",
+  "odfpy==1.4.1",
+  "h5py==3.16.0",
 ]
 
 [tool.vercel]

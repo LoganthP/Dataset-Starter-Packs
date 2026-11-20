@@ -14,6 +14,7 @@ import gzip
 import io
 import posixpath
 import re
+import shutil
 import stat
 import time
 import urllib.error
@@ -319,10 +320,18 @@ def fetch_members(url: str, size: int, names: list[str], dest: Path, *, auth: di
 
 # ---------------------------------------------------------------- single-file compression
 def decompress(path: Path, dest: Path, *, kind: str) -> Path:
-    """gzip or Unix compress (.Z) -> dest, counted against the extraction budget."""
+    """gzip, bzip2, xz or Unix compress (.Z) -> dest, counted against the extraction budget."""
     written = 0
     if kind == "gzip":
         src = gzip.open(path, "rb")
+    elif kind == "bzip2":
+        import bz2
+
+        src = bz2.open(path, "rb")
+    elif kind == "xz":
+        import lzma
+
+        src = lzma.open(path, "rb")
     else:
         try:
             import unlzw3
@@ -340,3 +349,143 @@ def decompress(path: Path, dest: Path, *, kind: str) -> Path:
                                  "too_large", limits.detail("extract", written, actions=["open_source"]))
             out.write(block)
     return dest
+
+
+# ---------------------------------------------------------------- other archive kinds -> one ZIP
+# Tar (plain, gzip, bzip2, xz), 7-Zip and ZIPs inside a ZIP are repacked into a single uncompressed ZIP so the ZIP path
+# (listing, member picker, handler choice, budgets) handles them unchanged. Members are validated like ZIP members:
+# no absolute paths, no "..", no links, junk skipped, and every byte counts against the extraction budget.
+ARCHIVE_TYPES = ("zip", "tar", "7z")
+_NESTED = re.compile(r"\.(zip|tar|tgz|tbz2|txz|tar\.gz|tar\.bz2|tar\.xz|7z)$", re.I)
+
+
+class _Budget:
+    def __init__(self, deadline: float | None, cancel):
+        self.written, self.deadline, self.cancel = 0, deadline, cancel
+
+    def add(self, n: int, name: str) -> None:
+        self.written += n
+        if self.written > limits.MAX_EXTRACT_BYTES:
+            raise FetchError(f"Expanding the archive passed the {limits.human(limits.MAX_EXTRACT_BYTES)} extraction budget "
+                             f"(DSP_MAX_EXTRACT_BYTES) at {name}. Extraction stopped.", "too_large",
+                             limits.detail("extract", self.written, actions=["select_member", "run_sample"]))
+        if self.deadline is not None and time.monotonic() > self.deadline:
+            raise FetchError("Ran out of time while expanding the archive.", "timeout")
+        if self.cancel:
+            self.cancel()
+
+
+def _copy_into(zout: zipfile.ZipFile, name: str, src, budget: _Budget) -> None:
+    with zout.open(zipfile.ZipInfo(name, date_time=(2000, 1, 1, 0, 0, 0)), "w", force_zip64=True) as dst:
+        while block := src.read(1 << 20):
+            budget.add(len(block), name)
+            dst.write(block)
+
+
+def _tar_into(tar_path: Path, zout: zipfile.ZipFile, prefix: str, budget: _Budget) -> int:
+    import tarfile
+
+    n = 0
+    try:
+        with tarfile.open(tar_path, "r:*") as tf:
+            for ti in tf:
+                if not ti.isfile():  # links, devices and folders are skipped
+                    continue
+                name = safe_name(ti.name)
+                if not name or JUNK.search(name):
+                    continue
+                src = tf.extractfile(ti)
+                if src is None:
+                    continue
+                with src:
+                    _copy_into(zout, prefix + name, src, budget)
+                n += 1
+    except (tarfile.TarError, EOFError, OSError) as exc:
+        raise FetchError(f"The tar archive is damaged or incomplete: {exc}.", "format") from exc
+    return n
+
+
+def _sevenzip_into(path: Path, zout: zipfile.ZipFile, prefix: str, budget: _Budget, work: Path) -> int:
+    try:
+        import py7zr
+    except ImportError as exc:
+        raise FetchError("7-Zip archives need the py7zr package, which this deployment doesn't include (it is installed in the Docker "
+                         "worker). Extract the archive on your computer and upload the data files, or a ZIP of them.", "format") from exc
+    tmp = work / "_7z"
+    tmp.mkdir(parents=True, exist_ok=True)
+    try:
+        with py7zr.SevenZipFile(path, "r") as z:
+            infos = [i for i in z.list() if not i.is_directory]
+            total = sum(i.uncompressed or 0 for i in infos)
+            if budget.written + total > limits.MAX_EXTRACT_BYTES:
+                budget.add(total, path.name)
+            z.extractall(path=tmp)
+    except FetchError:
+        raise
+    except Exception as exc:
+        raise FetchError(f"The 7-Zip archive couldn't be read: {exc}.", "format") from exc
+    n = 0
+    for f in sorted(p for p in tmp.rglob("*") if p.is_file() and not p.is_symlink()):
+        name = safe_name(f.relative_to(tmp).as_posix())
+        if not name or JUNK.search(name):
+            continue
+        with open(f, "rb") as src:
+            _copy_into(zout, prefix + name, src, budget)
+        n += 1
+    shutil.rmtree(tmp, ignore_errors=True)
+    return n
+
+
+def repack(path: Path, kind: str, work: Path, *, deadline: float | None = None, cancel=None, log=None) -> Path:
+    """tar / 7z / a ZIP whose data sits in inner archives -> one flat ZIP (inner archives expanded one level)."""
+    work.mkdir(parents=True, exist_ok=True)
+    out = work / (re.sub(r"\.(zip|tar|tgz|tbz2|txz|gz|bz2|xz|7z)$", "", path.name, flags=re.I) + ".repacked.zip")
+    budget = _Budget(deadline, cancel)
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED, allowZip64=True) as zout:
+        if kind == "tar":
+            n = _tar_into(path, zout, "", budget)
+        elif kind == "7z":
+            n = _sevenzip_into(path, zout, "", budget, work)
+        else:  # zip with inner archives
+            n = 0
+            with zipfile.ZipFile(path) as zin:
+                for info in zin.infolist():
+                    name = safe_name(info.filename)
+                    if info.is_dir() or not name or JUNK.search(name) or _is_symlink(info):
+                        continue
+                    if _NESTED.search(name):
+                        inner = work / "_inner" / name
+                        inner.parent.mkdir(parents=True, exist_ok=True)
+                        with zin.open(info) as src, open(inner, "wb") as fh:
+                            while block := src.read(1 << 20):
+                                budget.add(len(block), name)
+                                fh.write(block)
+                        prefix = re.sub(_NESTED, "", name) + "/"
+                        if zipfile.is_zipfile(inner):
+                            with zipfile.ZipFile(inner) as z2:
+                                for i2 in z2.infolist():
+                                    n2 = safe_name(i2.filename)
+                                    if i2.is_dir() or not n2 or JUNK.search(n2) or _is_symlink(i2):
+                                        continue
+                                    with z2.open(i2) as src:
+                                        _copy_into(zout, prefix + n2, src, budget)
+                                    n += 1
+                        elif name.lower().endswith(".7z"):
+                            n += _sevenzip_into(inner, zout, prefix, budget, work)
+                        else:
+                            n += _tar_into(inner, zout, prefix, budget)
+                        inner.unlink(missing_ok=True)
+                    else:
+                        with zin.open(info) as src:
+                            _copy_into(zout, name, src, budget)
+                        n += 1
+    shutil.rmtree(work / "_inner", ignore_errors=True)
+    if not n:
+        raise FetchError(f"{path.name} contains no files.", "not_data")
+    if log:
+        log(f"Repacked {n:,} file(s) from {path.name} ({limits.human(budget.written)})")
+    return out
+
+
+def has_inner_archives(members: list[dict]) -> bool:
+    return any(_NESTED.search(m["name"]) for m in members)

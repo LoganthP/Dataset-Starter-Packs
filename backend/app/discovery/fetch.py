@@ -130,8 +130,14 @@ def probe(url: str, expect: str | None, timeout: float = 12.0, auth: dict | None
         raise FetchError(f"{host} answered with a web page instead of the data file"
                          f"{' (a sign-in page)' if login else ''}. It probably needs sign-in or accepting terms: "
                          "open the source, download the file, then upload it here.", "auth")
-    if head.startswith(b"7z\xbc\xaf") or head.startswith(b"Rar!"):
-        raise FetchError("This is a 7-Zip or RAR archive, which can't be opened here. Extract it and upload the CSV or Parquet file.", "format")
+    if head.startswith(b"Rar!"):
+        raise FetchError("This is a RAR archive, which can't be opened here. Extract it and upload the data files, or a ZIP of them.", "format")
+    if head.startswith(b"7z\xbc\xaf"):
+        import importlib.util
+
+        if importlib.util.find_spec("py7zr") is None:
+            raise FetchError("This is a 7-Zip archive; this deployment can't open those (the Docker worker can). Extract it and upload "
+                             "the data files, or a ZIP of them.", "format")
     detected = sniff(head)
     kind = {"parquet": "parquet", "zip": "zip", "gzip": "gzip"}.get(detected, "text" if detected in ("csv", "tsv", "json", "sinex", "text")
                                                                      else "binary")

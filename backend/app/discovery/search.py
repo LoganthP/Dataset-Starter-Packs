@@ -284,6 +284,8 @@ def _with_analysis(records: dict[str, dict]) -> dict[str, dict]:
 
 
 def detail(record_id: str, p: dict) -> dict | None:
+    if store.get_record(record_id) is None:  # also pulls in a live result another instance found
+        return None
     r = _with_analysis(store.all_records()).get(record_id)
     if not r:
         return None
