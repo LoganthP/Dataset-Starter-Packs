@@ -43,7 +43,8 @@ def db_fp() -> str:
     from urllib.parse import urlparse
 
     u = urlparse(durable.DATABASE_URL)
-    return _fp(f"{u.hostname}{u.path}") or "postgres"
+    host = (u.hostname or "").replace("-pooler.", ".")  # Neon: pooled and direct hosts are the same database
+    return _fp(f"{host}{u.path}") or "postgres"
 
 
 # ------------------------------------------------------------------ worker side

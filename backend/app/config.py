@@ -13,7 +13,22 @@ STATE_DIR = Path(os.getenv("DSP_STATE_DIR") or ("/tmp/dsp-state" if ON_VERCEL el
 # queue: the API records jobs and a worker (python -m app.worker) runs them; thread: the API runs them itself.
 # Vercel can't run minutes-long jobs, so it always queues.
 RUN_MODE = os.getenv("DSP_RUN_MODE", "queue" if ON_VERCEL else "thread")
-HAS_SHARED_DB = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL"))
+
+
+def _database_env() -> tuple[str, str]:
+    """(variable name, URL). DATABASE_URL first, then POSTGRES_URL, then a single prefixed Neon/Postgres variable such as
+    STORAGE_DATABASE_URL (the Vercel Marketplace adds a prefix when one is chosen while connecting the store)."""
+    for name in ("DATABASE_URL", "POSTGRES_URL"):
+        if os.getenv(name):
+            return name, os.environ[name]
+    found = sorted(k for k, v in os.environ.items() if k.endswith(("_DATABASE_URL", "_POSTGRES_URL")) and "UNPOOLED" not in k
+                   and v.startswith(("postgres://", "postgresql://")))
+    prefixes = {k.rsplit("_", 2)[0] for k in found}
+    return (found[0], os.environ[found[0]]) if len(prefixes) == 1 else ("", "")
+
+
+DATABASE_ENV, DATABASE_URL = _database_env()
+HAS_SHARED_DB = bool(DATABASE_URL)
 # Starter-pack runs are minutes-long subprocesses with heavy ML dependencies. Locally and in Docker the API runs them;
 # on Vercel they're queued for the worker, which needs the shared Postgres to hand status, logs and charts back.
 PACK_RUNS_ENABLED = os.getenv("DSP_PACK_RUNS", "1" if (not ON_VERCEL or HAS_SHARED_DB) else "0") == "1"

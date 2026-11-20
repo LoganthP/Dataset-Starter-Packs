@@ -87,14 +87,18 @@ def diagnostics(deep: bool = False):
     this process's token works, and that every setting the worker must share with the API matches."""
     worker = queueing.status()
     mism = {"blob_token": "BLOB_READ_WRITE_TOKEN", "secret_key": "DSP_SECRET_KEY", "database": "DATABASE_URL"}
-    out = {"storage": durable.backend(), "databaseId": queueing.db_fp(), "runMode": config.RUN_MODE, "packRuns": config.PACK_RUNS_ENABLED,
+    out = {"storage": durable.backend(), "databaseEnv": config.DATABASE_ENV or None, "databaseId": queueing.db_fp(), "runMode": config.RUN_MODE, "packRuns": config.PACK_RUNS_ENABLED,
            "worker": worker, "blob": blob.status(),
            "secretKeySet": bool(os.getenv("DSP_SECRET_KEY")),
            "maxTransferBytes": limits.MAX_TRANSFER_BYTES,
            "problems": []}
     if config.RUN_MODE == "queue":
         if not durable.IS_POSTGRES:
-            out["problems"].append("Queue mode needs DATABASE_URL (Postgres) so the API and the worker share one database.")
+            near = sorted(k for k in os.environ if "DATABASE_URL" in k or "POSTGRES_URL" in k)  # names only, never values
+            out["problems"].append("Queue mode needs DATABASE_URL (Postgres) so the API and the worker share one database. "
+                                   + (f"Found {', '.join(near)} but none usable; check that it holds a postgres:// URL."
+                                      if near else "No database variable is set for this environment: connect Neon Postgres to the project "
+                                      "(Storage tab, Production enabled) and redeploy."))
         if worker["state"] in ("none", "offline"):
             out["problems"].append(worker["message"])
         for w in worker.get("warnings", []):

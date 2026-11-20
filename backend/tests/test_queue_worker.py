@@ -177,3 +177,18 @@ def test_blob_probe_classifies_failures(monkeypatch):
         with pytest.raises(blob.BlobProblem) as e:
             blob.probe("https://abc123.private.blob.vercel-storage.com/uploads/a.csv")
         assert e.value.kind == kind
+
+
+def test_database_fingerprint_ignores_neon_pooler_and_finds_prefixed_variable(monkeypatch):
+    monkeypatch.setattr(durable, "IS_POSTGRES", True)
+    monkeypatch.setattr(durable, "DATABASE_URL", "postgresql://u:p@ep-x-123-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    pooled = queueing.db_fp()
+    monkeypatch.setattr(durable, "DATABASE_URL", "postgresql://u:p@ep-x-123.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    assert queueing.db_fp() == pooled
+    for k in ("DATABASE_URL", "POSTGRES_URL"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("STORAGE_DATABASE_URL", "postgresql://u:p@h/db")
+    monkeypatch.setenv("STORAGE_DATABASE_URL_UNPOOLED", "postgresql://u:p@h2/db")
+    assert config._database_env() == ("STORAGE_DATABASE_URL", "postgresql://u:p@h/db")
+    monkeypatch.setenv("OTHER_POSTGRES_URL", "postgresql://u:p@h3/db")  # two different stores: don't guess
+    assert config._database_env() == ("", "")

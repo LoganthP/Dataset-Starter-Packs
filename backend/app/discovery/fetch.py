@@ -64,10 +64,6 @@ def _http_error(exc: urllib.error.HTTPError, host: str) -> FetchError:
             return FetchError("The uploaded file is no longer in Blob (deleted, or the upload never finished). Upload it again.", "not_found")
 
     if host.endswith(".blob.vercel-storage.com"):
-        if exc.code in (401, 403):
-            return FetchError(f"Access denied to private Vercel Blob store (HTTP {exc.code}). Ensure BLOB_READ_WRITE_TOKEN is configured and matches between Vercel and the analysis worker.", "auth")
-        if exc.code in (404, 410):
-            return FetchError(f"The uploaded Blob file was not found or has expired (HTTP {exc.code}).", "not_found")
         if exc.code == 413:
             return FetchError("The Blob upload exceeded the provider transfer limit (HTTP 413).", "too_large")
         if exc.code == 429:

@@ -24,3 +24,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.tsbuildinfo
+
+# Local verification output
+playwright_screenshots/
+/*.patch

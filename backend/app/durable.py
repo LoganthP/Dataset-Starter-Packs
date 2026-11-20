@@ -17,14 +17,13 @@ SQL here is written once with `?` placeholders and portable `insert ... on confl
 """
 from __future__ import annotations
 
-import os
 import sqlite3
 import threading
 from contextlib import contextmanager
 
 from . import config
 
-DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or ""
+DATABASE_URL = config.DATABASE_URL  # DATABASE_URL, POSTGRES_URL or one prefixed Neon variable (see config)
 IS_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
 SQLITE_PATH = config.STATE_DIR / "catalog.sqlite3"  # same file as the catalog cache, so existing local history is kept
 
