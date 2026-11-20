@@ -1,6 +1,6 @@
 import os
 import sys
-import time
+
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://localhost:8000"
@@ -23,7 +23,7 @@ def run_tests():
             page = context.new_page()
 
             page_errors = []
-            page.on("pageerror", lambda err: page_errors.append(str(err)))
+            page.on("pageerror", lambda err, page_errors=page_errors: page_errors.append(str(err)))
             page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
             page.goto(BASE_URL, wait_until="networkidle")
