@@ -141,6 +141,10 @@ def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = Fa
         cmd += ["--param", f"{k}={v}"]
     env = {**os.environ, "MPLBACKEND": "Agg", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1",
            "MPLCONFIGDIR": str(config.STATE_DIR / "mpl")}  # serverless home directories are read-only
+    if config.ON_VERCEL and not config.PACK_PYTHON:
+        # The function's dependencies sit on the web app's import path, not in the interpreter's default one: a pack started as
+        # its own process would fail with "No module named 'numpy'". Hand it the same path.
+        env["PYTHONPATH"] = os.pathsep.join(p for p in [*sys.path, os.environ.get("PYTHONPATH", "")] if p)
     # Split CPU cores between parallel runs so OpenMP/BLAS threads don't oversubscribe the machine.
     threads = str(max(1, (os.cpu_count() or 2) // config.MAX_PARALLEL_RUNS))
     for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):

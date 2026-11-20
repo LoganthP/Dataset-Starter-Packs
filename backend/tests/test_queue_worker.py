@@ -241,3 +241,33 @@ def test_inline_runner_does_not_count_as_a_worker(inline_client):
 def test_dataset_analysis_drive_endpoint_404_and_idempotent(inline_client):
     assert inline_client.post("/api/analyses/nope/drive").status_code == 404
     assert inline_client.post("/api/runs/nope/drive").status_code == 404
+
+
+def test_pack_process_gets_the_web_apps_import_path_on_vercel(client, monkeypatch, tmp_path):
+    """On Vercel the pack subprocess must see the function's site-packages ("No module named numpy" otherwise). Proven with a
+    bare interpreter that has no packages of its own: it can only import numpy through the PYTHONPATH we pass."""
+    import subprocess
+    import sys
+    import venv
+
+    bare = tmp_path / "bare"
+    venv.create(bare, with_pip=False, system_site_packages=False)
+    py = bare / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    assert subprocess.run([str(py), "-c", "import numpy"], capture_output=True).returncode != 0  # really bare
+    monkeypatch.setattr(config, "ON_VERCEL", True)
+    monkeypatch.setattr(config, "PACK_PYTHON", "")
+    monkeypatch.setattr(sys, "executable", str(py))
+    seen = {}
+    real = subprocess.Popen
+
+    def spy(cmd, **kw):
+        seen["env"] = kw.get("env")
+        return real(cmd, **kw)
+
+    monkeypatch.setattr(runner.subprocess, "Popen", spy)
+    db.insert({"id": "a1b2c3d4e5f6", "slug": SLUG, "mode": "sample", "params": {}, "status": "running",
+               "created_at": "2026-01-01T00:00:00+00:00"})
+    runner._execute("a1b2c3d4e5f6", SLUG, "sample", {}, ship=False)
+    assert seen["env"]["PYTHONPATH"].split(os.pathsep)[0]  # starts with the web app's own path
+    row = db.get("a1b2c3d4e5f6")
+    assert row["status"] == "succeeded", db.read_log("a1b2c3d4e5f6")

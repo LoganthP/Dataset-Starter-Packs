@@ -643,45 +643,36 @@ docker compose up -d --build      # build + start
 
 One image serves the API and the built React app. Starter-pack runs work inside the container.
 
-<<<<<<< HEAD
-1. Import the repository in Vercel. `vercel.json` and the `[project]` / `[tool.vercel]` sections of `pyproject.toml` configure it: the React app is built by `buildCommand`, and FastAPI (`backend.app.main:app`) runs as one Python function (300 s max duration).
-2. Add **Neon Postgres** from the Vercel Marketplace (sets `DATABASE_URL`). Analyses, comparisons, overlays and curated records are stored there; without it they would be lost on every cold start.
-3. Connect a **Vercel Blob** store (sets `BLOB_READ_WRITE_TOKEN`). Uploads then go from the browser straight to private Blob storage with authorized multipart uploads (the upload token caps the object at `DSP_MAX_TRANSFER_BYTES`), so they never pass through the function request body. Without Blob, uploads go to the function directly and are capped at 95 MB (Vercel's function request-body limit is 100 MB).
-4. Set `DSP_SECRET_KEY` (encrypts connected Kaggle accounts) and, for Kaggle OAuth, `DSP_PUBLIC_URL`.
-5. Run the **worker** somewhere with disk and time (any VM or container service). On Vercel the API runs in `DSP_RUN_MODE=queue`: it only records jobs in Postgres, and the worker runs both dataset analyses and starter-pack runs. Until a worker is connected the Run view says so ("Waiting for a worker: none is connected") instead of sitting on "Queued".
-
-   ```bash
-   docker compose build app                         # the image holds the API, packs and analysis stack
-   docker compose --profile worker up -d --no-deps worker
-   # or, without Docker, from backend/:
-   python -m app.worker
-   python -m app.worker --doctor                    # checks database, Blob, secret key, packs; prints no secrets; exit 1 on a problem
-   ```
-
-   Required environment (names only, set the **same values** as in Vercel Production): `DATABASE_URL` (the Neon connection string), `DSP_SECRET_KEY`, `BLOB_READ_WRITE_TOKEN`. `DSP_RUN_MODE=queue` is implied. Optional: `DSP_WORKER_NAME`, `DSP_WORKER_POLL_SECONDS` (2), `DSP_WORKER_HEARTBEAT_SECONDS` (5), `DSP_WORKER_STALE_SECONDS` (30), `DSP_QUEUE_MAX_AGE_HOURS` (24), `DSP_MAX_ARTIFACT_MB` (25 per run).
-   Check the wiring from the deployed site: `GET /api/worker/status` (online/busy/offline/none) and `GET /api/diagnostics?deep=1` (Blob token present and accepted, database id, worker mismatches reported as warnings naming the variable). Both return fingerprints, never values. A worker whose heartbeat stops is reported offline after `DSP_WORKER_STALE_SECONDS`; its running job goes back in line (twice at most) and queued jobs wait for it for up to `DSP_QUEUE_MAX_AGE_HOURS`, then fail with the reason.
-6. Optional: provider keys from `.env.example`.
-
-Starter-pack runs on Vercel are executed by the worker too (the function never runs the ML stack). Status, log, `results.json` and every chart are stored in Postgres (each run's files up to `DSP_MAX_ARTIFACT_MB`), so the Run view and its charts reload after a refresh from any instance. With no `DATABASE_URL` pack runs stay off and the pack pages offer the starter and notebook downloads.
-=======
 ### ▲ Vercel
+
+Starter-pack samples and dataset sample analyses run **on the Vercel site itself**; only large jobs (full analyses, real-data pack runs) need an optional **worker** sharing the same Postgres. Full checklist: [**DEPLOY_VERCEL.md**](DEPLOY_VERCEL.md).
 
 | Step | Where | What to do |
 | :--- | :--- | :--- |
 | 1 | Vercel → **Add New → Project** | Import this repository from the **root**. `vercel.json` and `pyproject.toml` configure the build: the React app is built by `buildCommand`, FastAPI runs as one Python function (300 s max). |
-| 2 | **Storage → Neon Postgres** | Connect it to the project. This sets `DATABASE_URL`; without it data would be lost on every cold start. |
-| 3 | **Storage → Blob** | Connect a Blob store (sets `BLOB_READ_WRITE_TOKEN`). Without it uploads are capped at 95 MB. |
+| 2 | **Storage → Neon Postgres** | Connect it with **Production** (and Preview) ticked. This sets `DATABASE_URL`. Without it `/api/health` shows `"storage":"sqlite"` and nothing can reach the worker. |
+| 3 | **Storage → Blob** | Connect a **private** Blob store (sets `BLOB_READ_WRITE_TOKEN`). Without it uploads are capped at 95 MB. |
 | 4 | **Settings → Environment Variables** | Set `DSP_SECRET_KEY` (generate below) and, for Kaggle OAuth, `DSP_PUBLIC_URL`. Optional: provider keys. |
-| 5 | Any VM / container service | Run the **analysis worker** with the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN` and `DSP_SECRET_KEY`: `cd backend && python -m app.worker` (or the Docker image with `command: python -m app.worker`). |
-| 6 | Deployments | Redeploy, then open `https://<your-site>/api/health`. |
+| 5 | Deployments | **Redeploy** (environment changes only apply to new deployments). `/api/health` must show `"storage":"postgres"`. |
+| 6 | *Optional*: any container host | Start a **worker** for large jobs with the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `DSP_SECRET_KEY` (commands below). `/api/worker/status` then shows `online`. |
 
 ```bash
 # Generate DSP_SECRET_KEY
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+# Worker (Docker): put the three values in .env, then
+docker compose build app
+docker compose run --rm worker python -m app.worker --doctor   # checks DB, Blob, key; prints no secrets
+docker compose --profile worker up -d --no-deps worker
+
+# Worker (no Docker), from backend/ with requirements.txt installed
+python -m app.worker
 ```
 
+Check from the browser: `/api/health`, `/api/worker/status` and `/api/diagnostics?deep=1` (lists problems by variable name, never values).
+
 > [!NOTE]
-> Starter-pack runs are turned off on Vercel (they need the full ML stack and minutes of runtime); pack pages still offer the starter ZIP and notebook downloads.
+> On Vercel, samples run inside the site; status, log, `results.json` and charts are stored in Postgres, so the Run view reloads after a refresh. Large jobs wait for a worker and say "Waiting for a worker" instead of sitting on "Queued".
 
 <img src="assets/divider.svg" width="100%" alt=""/>
 
@@ -756,7 +747,7 @@ The error names the limit, its value and the measured size. Raise `DSP_MAX_TRANS
 <details>
 <summary><b>▲ Vercel: analyses stay "Queued"</b></summary>
 
-On Vercel the API only records jobs (`DSP_RUN_MODE=queue`). Start the worker (`python -m app.worker`) somewhere with disk and time, using the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN` and `DSP_SECRET_KEY`.
+Samples run on the site itself; if one stays queued, reopen the run page. Open `/api/diagnostics`: if it says `"storage": "sqlite"`, Neon isn't connected to the Production environment, so connect it and redeploy. Full analyses and real-data pack runs need a worker: start one (`python -m app.worker`) with the same `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN` and `DSP_SECRET_KEY`; queued jobs then start on their own.
 </details>
 
 <img src="assets/divider.svg" width="100%" alt=""/>
@@ -768,4 +759,3 @@ Datasets keep their own licenses and citations — see [**DATA_SOURCES.md**](DAT
 <sub>If this project helped you start a data project, consider giving it a ⭐</sub>
 
 </div>
->>>>>>> e60aad130a706a19a8959dbe77048564b8bc547c
