@@ -84,6 +84,9 @@ export const api = {
   log: (id: string, offset: number) => request<{ text: string; offset: number }>(`/api/runs/${id}/log?offset=${offset}`),
   startRun: (slug: string, mode: Mode, params: Record<string, string>) =>
     request<Run>(`/api/packs/${slug}/runs`, json({ mode, params })),
+  /** Starts a queued small run on the site itself (no worker). Resolves when the run ends; errors are ignored by callers. */
+  driveRun: (kind: "pack" | "analysis", id: string) =>
+    request<{ driver: string; status: string }>(kind === "pack" ? `/api/runs/${id}/drive` : `/api/analyses/${id}/drive`, { method: "POST" }),
   cancelRun: (id: string) => request<{ canceled: boolean }>(`/api/runs/${id}/cancel`, { method: "POST" }),
   deleteRun: (id: string) => request<{ deleted: string }>(`/api/runs/${id}`, { method: "DELETE" }),
   dataStatus: (slug: string) => request<DataStatus>(`/api/packs/${slug}/data`),

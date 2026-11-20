@@ -12,6 +12,7 @@ import AnalysisResults from "../components/analysis/AnalysisResults";
 import { FilePicker, Inspector, KaggleBanner, NextActions, PairNote, phaseShare, phaseText } from "../components/analysis/RunControls";
 import { useAccount } from "../lib/account";
 import { QueueNotice } from "../components/QueueNotice";
+import { useInlineDrive } from "../components/useInlineDrive";
 import { ErrorBox, Spinner, StatusPill } from "../components/ui";
 import { RETRYABLE, STAGES, failureLabel, stageIndex } from "../lib/analysisText";
 import { useShortlist } from "../lib/shortlist";
@@ -97,6 +98,7 @@ export default function DatasetRunPage() {
   const run = shown.data;
   const fallback = useRun(run && run.status !== "succeeded" && latestGood && latestGood !== run.id ? latestGood : null).data;
   const active = run?.status === "queued" || run?.status === "running";
+  useInlineDrive("analysis", run);
 
   useEffect(() => {
     api.files(id).then((f) => {

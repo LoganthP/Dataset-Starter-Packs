@@ -32,6 +32,11 @@ HAS_SHARED_DB = bool(DATABASE_URL)
 # Starter-pack runs are minutes-long subprocesses with heavy ML dependencies. Locally and in Docker the API runs them;
 # on Vercel they're queued for the worker, which needs the shared Postgres to hand status, logs and charts back.
 PACK_RUNS_ENABLED = os.getenv("DSP_PACK_RUNS", "1" if (not ON_VERCEL or HAS_SHARED_DB) else "0") == "1"
+# Small runs (starter-pack samples, analyses that finish within the budget) can execute inside the web app itself, driven by
+# the browser's POST .../drive, so a site with no worker still works. Default: on Vercel when a shared database exists.
+INLINE_RUNS = os.getenv("DSP_INLINE_RUNS", "1" if (ON_VERCEL and HAS_SHARED_DB) else "0") == "1"
+# Seconds an in-app run may take. Vercel stops the function at its maxDuration (300 s in vercel.json); stay well under.
+INLINE_BUDGET_SECONDS = float(os.getenv("DSP_INLINE_BUDGET_SECONDS", "240"))
 # A job nobody picked up for this long is failed with a clear message (hours).
 QUEUE_MAX_AGE_HOURS = float(os.getenv("DSP_QUEUE_MAX_AGE_HOURS", "24"))
 # A worker whose heartbeat is older than this is considered gone (seconds); it beats every HEARTBEAT_SECONDS.

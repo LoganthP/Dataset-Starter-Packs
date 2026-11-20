@@ -25,7 +25,6 @@ import logging  # noqa: E402
 import signal  # noqa: E402
 import socket  # noqa: E402
 import sys  # noqa: E402
-import threading  # noqa: E402
 import time  # noqa: E402
 
 from . import blob, config, db, durable, queueing, runner  # noqa: E402
@@ -40,29 +39,12 @@ def _handle(signum, frame) -> None:  # noqa: ARG001
     _stop = True
 
 
-class Heartbeat(threading.Thread):
-    """Beats while a long job runs, too (analyses and packs can take many minutes)."""
-
-    def __init__(self, name: str):
-        super().__init__(daemon=True, name="heartbeat")
-        self.worker, self.current, self.started = name, None, queueing._iso()
-        self.halt = threading.Event()
-
-    def run(self) -> None:
-        while not self.halt.is_set():
-            try:
-                queueing.beat(self.worker, "all", self.current, started_at=self.started)
-            except Exception as exc:  # noqa: BLE001 - say so once per failure, keep trying
-                log.warning("heartbeat failed: %s", exc.__class__.__name__)
-            self.halt.wait(config.WORKER_HEARTBEAT_SECONDS)
-
-
 def _oldest(table: str, extra: str = "") -> str | None:
     row = durable.one(f"select min(created_at) as t from {table} where status='queued'{extra}")
     return row["t"] if row else None
 
 
-def run_once(name: str, hb: Heartbeat | None = None) -> bool:
+def run_once(name: str, hb: queueing.Heartbeat | None = None) -> bool:
     """Claim and run the oldest queued job (pack or analysis). Returns False when the queue is empty."""
     queueing.reap_throttled()
     a, p = _oldest("analysis_runs", " and job is not null"), _oldest("pack_runs", " and cancel_requested=0")
@@ -157,7 +139,7 @@ def main() -> None:
     for note in startup_report(name):
         (log.warning if note.startswith("WARNING") else log.info)("%s", note)
     log.info("worker %s polling every %.1fs (%s)", name, poll, durable.backend())
-    hb = Heartbeat(name)
+    hb = queueing.Heartbeat(name)
     hb.start()
     while not _stop:
         try:

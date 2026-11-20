@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { api, fmtBytes, timeAgo, useDiscoverMeta } from "../api";
 import type { DataStatus, Mode, PackDetail } from "../types";
 import { QueueNotice } from "./QueueNotice";
+import { useInlineDrive } from "./useInlineDrive";
 import ResultsView from "./ResultsView";
 import { ErrorBox, StatusPill } from "./ui";
 import { useRunWatcher } from "./useRunWatcher";
@@ -122,6 +123,7 @@ export default function RunPanel({ pack, initialRunId, autoStart, onRunChange }:
   const [startError, setStartError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const { run, log, error, progress, stepLabel } = useRunWatcher(runId);
+  useInlineDrive("pack", run);
   const logRef = useRef<HTMLPreElement>(null);
   const started = useRef(false);
 

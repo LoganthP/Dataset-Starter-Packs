@@ -28,3 +28,4 @@ Thumbs.db
 # Local verification output
 playwright_screenshots/
 /*.patch
+.env

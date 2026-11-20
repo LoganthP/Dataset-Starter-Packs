@@ -192,3 +192,52 @@ def test_database_fingerprint_ignores_neon_pooler_and_finds_prefixed_variable(mo
     assert config._database_env() == ("STORAGE_DATABASE_URL", "postgresql://u:p@h/db")
     monkeypatch.setenv("OTHER_POSTGRES_URL", "postgresql://u:p@h3/db")  # two different stores: don't guess
     assert config._database_env() == ("", "")
+
+
+# ---- in-site runs (no worker) --------------------------------------------------------------------------------------
+
+@pytest.fixture()
+def inline_client(client, monkeypatch):
+    monkeypatch.setattr(config, "INLINE_RUNS", True)
+    return client
+
+
+def test_pack_sample_runs_inside_the_site_without_a_worker(inline_client):
+    run = post_run(inline_client)
+    q = inline_client.get(f"/api/runs/{run['id']}").json()["queue"]
+    assert q["state"] == "inline"  # the Run view hides this and the browser starts the run
+    res = inline_client.post(f"/api/runs/{run['id']}/drive")
+    assert res.json() == {"driver": "inline", "status": "succeeded"}
+    done = inline_client.get(f"/api/runs/{run['id']}").json()
+    assert done["status"] == "succeeded" and done["results"] and db.artifact_names(run["id"])
+    assert not durable.query("select * from workers")  # the in-app runner's heartbeat row is removed afterwards
+    assert inline_client.post(f"/api/runs/{run['id']}/drive").json()["driver"] == "none"  # second call: nothing to claim
+
+
+def test_real_data_pack_run_still_needs_a_worker(inline_client):
+    run = post_run(inline_client, mode="real")
+    q = inline_client.get(f"/api/runs/{run['id']}").json()["queue"]
+    assert q["state"] == "none" and "too large" in q["detail"]
+    assert inline_client.post(f"/api/runs/{run['id']}/drive").json()["driver"] == "worker"
+    assert db.get(run["id"])["status"] == "queued"
+
+
+def test_connected_worker_takes_precedence_over_the_site(inline_client):
+    queueing.beat("w1")
+    run = post_run(inline_client)
+    assert inline_client.post(f"/api/runs/{run['id']}/drive").json()["driver"] == "worker"
+    assert db.get(run["id"])["status"] == "queued"
+    assert worker.run_once("w1")
+
+
+def test_inline_runner_does_not_count_as_a_worker(inline_client):
+    queueing.beat("inline-x", queueing.INLINE_KIND)
+    assert inline_client.get("/api/worker/status").json()["state"] == "none"
+    assert queueing.live_worker_names() == {"inline-x"}  # but the reaper must not requeue what it is running
+    d = inline_client.get("/api/diagnostics").json()
+    assert not any("no worker" in p.lower() for p in d["problems"]) and d["notes"] and d["inlineRuns"] is True
+
+
+def test_dataset_analysis_drive_endpoint_404_and_idempotent(inline_client):
+    assert inline_client.post("/api/analyses/nope/drive").status_code == 404
+    assert inline_client.post("/api/runs/nope/drive").status_code == 404

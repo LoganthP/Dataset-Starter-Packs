@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import accounts, blob, catalog, config, db, durable, kaggle_connect, packaging, queueing, runner, sources
+from . import accounts, blob, catalog, config, db, durable, inline, kaggle_connect, packaging, queueing, runner, sources
 from .discovery import analysis, comparisons, dataimport, importer, limits, live, resolve, search
 from .discovery import search as discovery
 from .discovery import store as catalog_store
@@ -87,7 +87,7 @@ def diagnostics(deep: bool = False):
     this process's token works, and that every setting the worker must share with the API matches."""
     worker = queueing.status()
     mism = {"blob_token": "BLOB_READ_WRITE_TOKEN", "secret_key": "DSP_SECRET_KEY", "database": "DATABASE_URL"}
-    out = {"storage": durable.backend(), "databaseEnv": config.DATABASE_ENV or None, "databaseId": queueing.db_fp(), "runMode": config.RUN_MODE, "packRuns": config.PACK_RUNS_ENABLED,
+    out = {"storage": durable.backend(), "databaseEnv": config.DATABASE_ENV or None, "databaseId": queueing.db_fp(), "runMode": config.RUN_MODE, "packRuns": config.PACK_RUNS_ENABLED, "inlineRuns": inline.enabled(),
            "worker": worker, "blob": blob.status(),
            "secretKeySet": bool(os.getenv("DSP_SECRET_KEY")),
            "maxTransferBytes": limits.MAX_TRANSFER_BYTES,
@@ -100,7 +100,11 @@ def diagnostics(deep: bool = False):
                                       if near else "No database variable is set for this environment: connect Neon Postgres to the project "
                                       "(Storage tab, Production enabled) and redeploy."))
         if worker["state"] in ("none", "offline"):
-            out["problems"].append(worker["message"])
+            if config.INLINE_RUNS:  # small runs work without one; say what that leaves out
+                out.setdefault("notes", []).append("No worker is connected: samples and small analyses run on the site; full analyses and "
+                                                   "real-data starter-pack runs wait for a worker.")
+            else:
+                out["problems"].append(worker["message"])
         for w in worker.get("warnings", []):
             out["problems"].append(f"The worker and this app have different {mism[w]} values. Set the same one on both.")
     if deep:
@@ -115,6 +119,7 @@ def capabilities() -> dict:
     lim = limits.capabilities()
     return {"packRuns": config.PACK_RUNS_ENABLED, "storage": durable.backend(), "runMode": analysis.RUN_MODE,
             "worker": queueing.status() if config.RUN_MODE == "queue" else None,
+            "inlineRuns": inline.enabled(),
             "uploadMode": "blob" if blob.enabled() else "direct", **lim,
             # Vercel Functions accept request bodies up to 100 MB; larger files go browser -> private Blob (multipart) when a store is connected.
             "directUploadMaxMB": min(95, lim["maxUploadMB"]) if config.ON_VERCEL else lim["maxUploadMB"],
@@ -233,6 +238,22 @@ def create_run(slug: str, body: RunRequest):
         return runner.submit(slug, body.mode, {k: v for k, v in body.params.items()})
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/api/runs/{run_id}/drive")
+def drive_run(run_id: str):
+    """Run a queued starter-pack sample inside the site (no worker needed). Holds the request until the run ends; the Run view
+    polls GET /api/runs/{id} meanwhile. Safe to call twice: the run is claimed atomically."""
+    _run_or_404(run_id)
+    return inline.drive_pack(run_id)
+
+
+@app.post("/api/analyses/{run_id}/drive")
+def drive_analysis(run_id: str):
+    """Same for a queued dataset analysis."""
+    if not analysis.get(run_id):
+        raise HTTPException(404, "Analysis not found")
+    return inline.drive_analysis(run_id)
 
 
 @app.get("/api/runs")
@@ -644,9 +665,10 @@ def get_analysis(run_id: str, view: Literal["full", "lite"] = "full"):
         raise HTTPException(404, "Analysis not found")
     has_job = bool(run.pop("job", None))
     queued_for_worker = run["status"] == "queued" and has_job
+    inline_ok = inline.analysis_eligible({"status": run["status"], "job": has_job})
     run.pop("summary", None)
     if queued_for_worker:  # where it is in line, and whether a worker is there to run it
-        run["queue"] = queueing.queue_info("analysis_runs", run["created_at"], run_id)
+        run["queue"] = queueing.queue_info("analysis_runs", run["created_at"], run_id, inline_ok=inline_ok)
     if view == "lite" and run.get("report"):
         run["report"] = {k: v for k, v in run["report"].items() if k != "preview"} | {"preview_deferred": len(run["report"].get("preview") or [])}
     rec = catalog_store.all_records().get(run["dataset_id"])

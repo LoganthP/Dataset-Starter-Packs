@@ -91,6 +91,14 @@ def claim_next(worker: str, now: str) -> dict | None:
     return None
 
 
+def claim(run_id: str, worker: str, now: str) -> dict | None:
+    """Take this one queued run (atomic: a second caller gets None)."""
+    if durable.execute_count("update pack_runs set status='running', worker=?, started_at=? where id=? and status='queued' "
+                             "and cancel_requested=0", (worker, now, run_id)):
+        return get(run_id)
+    return None
+
+
 def append_log(run_id: str, text: str) -> None:
     if text:
         durable.execute("update pack_runs set log = log || ? where id=?", (text, run_id))

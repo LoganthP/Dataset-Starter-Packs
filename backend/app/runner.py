@@ -62,10 +62,10 @@ def submit(slug: str, mode: str, params: dict) -> dict:
 def with_queue(run: dict | None) -> dict | None:
     """Queued runs carry where they are in line and whether a worker is there (see queueing.queue_info)."""
     if run and run["status"] == "queued" and config.RUN_MODE == "queue":
-        from . import queueing
+        from . import inline, queueing
 
         queueing.reap_throttled()
-        run["queue"] = queueing.queue_info("pack_runs", run["created_at"], run["id"])
+        run["queue"] = queueing.queue_info("pack_runs", run["created_at"], run["id"], inline_ok=inline.pack_eligible(run))
     return run
 
 
@@ -128,7 +128,7 @@ def _store_outputs(run_id: str, out: Path) -> list[str]:
     return notes
 
 
-def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = False) -> None:
+def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = False, timeout: float | None = None) -> None:
     if _canceled_now(run_id, ship):
         db.update(run_id, status="canceled", finished_at=_now())
         return
@@ -139,7 +139,8 @@ def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = Fa
     cmd = [config.PACK_PYTHON or sys.executable, "-u", "analysis.py", "--mode", mode, "--out", str(out)]
     for k, v in params.items():
         cmd += ["--param", f"{k}={v}"]
-    env = {**os.environ, "MPLBACKEND": "Agg", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    env = {**os.environ, "MPLBACKEND": "Agg", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1",
+           "MPLCONFIGDIR": str(config.STATE_DIR / "mpl")}  # serverless home directories are read-only
     # Split CPU cores between parallel runs so OpenMP/BLAS threads don't oversubscribe the machine.
     threads = str(max(1, (os.cpu_count() or 2) // config.MAX_PARALLEL_RUNS))
     for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
@@ -158,12 +159,12 @@ def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = Fa
             with _procs_lock:
                 _procs[run_id] = proc
             try:
-                code = proc.wait(timeout=config.RUN_TIMEOUT_SECONDS)
+                code = proc.wait(timeout=timeout or config.RUN_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.wait()
                 code = -9
-                log.write(f"\nTimeoutError: run exceeded {config.RUN_TIMEOUT_SECONDS} s and was stopped.\n")
+                log.write(f"\nTimeoutError: run exceeded {int(timeout or config.RUN_TIMEOUT_SECONDS)} s and was stopped.\n")
     except Exception as exc:  # e.g. interpreter not found
         if pump:
             pump.stop.set()
@@ -199,9 +200,9 @@ def _execute(run_id: str, slug: str, mode: str, params: dict, *, ship: bool = Fa
     _canceled.discard(run_id)
 
 
-def execute_claimed(run: dict) -> None:
+def execute_claimed(run: dict, *, timeout: float | None = None) -> None:
     """Worker entry point for a run it has claimed (status is already 'running')."""
-    _execute(run["id"], run["slug"], run["mode"], run["params"], ship=True)
+    _execute(run["id"], run["slug"], run["mode"], run["params"], ship=True, timeout=timeout)
 
 
 def cancel(run_id: str) -> bool:

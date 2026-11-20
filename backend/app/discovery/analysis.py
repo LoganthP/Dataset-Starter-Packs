@@ -588,7 +588,7 @@ def _scope(report: dict, rec: dict, fetch: dict | None, params: dict) -> dict:
     return {"kind": "dataset", "label": "Full dataset"}
 
 
-def _execute(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode: str = "full") -> None:
+def _execute(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode: str = "full", budget: float | None = None) -> None:
     folder = RUNS_DIR / run_id
     quick = mode == "sample"
     known_total, partial, method, plan, url = None, False, None, {}, None
@@ -600,6 +600,8 @@ def _execute(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mod
         params = run0.get("params") or {}
         prepare = quick and bool(params.get("prepare"))  # "Prepare archive and run sample": whole download, sampled analysis
         deadline = time.monotonic() + (QUICK_DEADLINE_S if quick and not prepare else FULL_DEADLINE_S)
+        if budget:  # running inside the web app: stop cleanly before the platform kills the function
+            deadline = min(deadline, time.monotonic() + budget)
         _update(run_id, status="running")
         if fetch:
             name = re.sub(r"[^A-Za-z0-9._-]+", "_", (fetch.get("name") or fetch["url"].rsplit("/", 1)[-1]).replace("/", "_"))[-120:] or "download"
@@ -881,6 +883,14 @@ def _launch(run_id: str, rec: dict, fetch: dict | None, local: Path | None, mode
         _execute(run_id, rec, fetch, local, mode)
     else:
         threading.Thread(target=_execute, args=(run_id, rec, fetch, local, mode), daemon=True, name=f"analysis-{run_id}").start()
+
+
+def claim(run_id: str, worker: str) -> dict | None:
+    """Take this one queued job (atomic: a second caller gets None)."""
+    if durable.execute_count("update analysis_runs set status='running', worker=?, stage='resolving' where id=? and status='queued' "
+                             "and job is not null", (worker, run_id)):
+        return get(run_id, user=ANY)
+    return None
 
 
 def claim_next(worker: str) -> dict | None:

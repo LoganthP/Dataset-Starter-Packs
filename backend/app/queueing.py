@@ -12,6 +12,7 @@ import datetime as dt
 import hashlib
 import os
 import socket
+import threading
 
 from . import blob, config, durable
 
@@ -57,6 +58,23 @@ def beat(name: str, kind: str = "all", current_run: str | None = None, *, starte
         "current_run=excluded.current_run, blob_fp=excluded.blob_fp, secret_fp=excluded.secret_fp, db_fp=excluded.db_fp", row)
 
 
+class Heartbeat(threading.Thread):
+    """Keeps a worker's (or the in-app runner's) heartbeat fresh while a long job runs."""
+
+    def __init__(self, name: str, kind: str = "all"):
+        super().__init__(daemon=True, name="heartbeat")
+        self.worker, self.kind, self.current, self.started = name, kind, None, _iso()
+        self.halt = threading.Event()
+
+    def run(self) -> None:
+        while not self.halt.is_set():
+            try:
+                beat(self.worker, self.kind, self.current, started_at=self.started)
+            except Exception:  # noqa: BLE001 - keep trying; a missed beat only matters if many are missed
+                pass
+            self.halt.wait(config.WORKER_HEARTBEAT_SECONDS)
+
+
 def forget(name: str) -> None:
     durable.execute("delete from workers where name=?", (name,))
 
@@ -73,9 +91,14 @@ def _age(ts: str | None) -> float | None:
     return max(0.0, (_now() - t).total_seconds())
 
 
-def workers() -> list[dict]:
+INLINE_KIND = "inline"  # the web app's own in-process runner (see inline.py); not a worker anyone has to start
+
+
+def workers(*, inline: bool = True) -> list[dict]:
     rows = durable.query("select name, kind, started_at, heartbeat_at, current_run, blob_fp, secret_fp, db_fp from workers "
                          "order by heartbeat_at desc")
+    if not inline:
+        rows = [r for r in rows if r["kind"] != INLINE_KIND]
     for r in rows:
         r["age"] = _age(r["heartbeat_at"])
         r["live"] = r["age"] is not None and r["age"] <= config.WORKER_STALE_SECONDS
@@ -111,7 +134,7 @@ def status() -> dict:
     """What the Run view and /api/worker/status show. Only meaningful in queue mode."""
     if config.RUN_MODE != "queue":
         return {"mode": config.RUN_MODE, "state": "inline", "message": "Runs execute inside the app; no separate worker is needed."}
-    ws = workers()
+    ws = workers(inline=False)  # an in-app runner doesn't count as "a worker is connected"
     live = [w for w in ws if w["live"]]
     c = _counts()
     queued = c["analysis"]["queued"] + c["pack"]["queued"]
@@ -140,12 +163,14 @@ def status() -> dict:
         state = "none"
         message = ("No worker has ever connected to this app's database, so queued jobs can't start. Start one with "
                    "`python -m app.worker` (or `docker compose --profile worker up -d`) using this deployment's DATABASE_URL.")
+    if not live and config.INLINE_RUNS:
+        message += " Starter-pack samples and small analyses run on the site itself; full analyses and real-data runs need a worker."
     return {"mode": "queue", "state": state, "message": message, "live": len(live), "queued": queued, "running": running,
             "oldestQueuedSeconds": _age(oldest), "lastSeenSeconds": ws[0]["age"] if ws else None, "warnings": warnings,
             "workers": [{"name": w["name"], "live": w["live"], "lastSeenSeconds": w["age"], "currentRun": w["current_run"]} for w in ws[:5]]}
 
 
-def queue_info(table: str, created_at: str, run_id: str) -> dict | None:
+def queue_info(table: str, created_at: str, run_id: str, inline_ok: bool = False) -> dict | None:
     """For one queued run: where it is in line and what is (not) there to run it."""
     if config.RUN_MODE != "queue":
         return None
@@ -153,13 +178,21 @@ def queue_info(table: str, created_at: str, run_id: str) -> dict | None:
     ahead = durable.one(f"select count(*) as n from {table} where status='queued' and created_at < ?"
                         + (" and job is not null" if table == "analysis_runs" else ""), (created_at,))
     n = int(ahead["n"]) if ahead else 0
+    if st["state"] in ("none", "offline") and inline_ok and config.INLINE_RUNS:
+        # the browser starts it (POST .../drive); the Run view hides this state, there is nothing to wait for
+        return {"state": "inline", "headline": "Starting on the site", "detail": "Small runs execute on the site itself; no worker is needed.",
+                "ahead": n, "waitingSeconds": _age(created_at), "warnings": []}
     if st["state"] in ("none", "offline"):
         headline = "Waiting for a worker: none is connected" if st["state"] == "none" else "Waiting for a worker: it went offline"
     elif n or st["state"] == "busy":
         headline = f"Waiting in line: {n} job{'s' if n != 1 else ''} ahead" if n else "Waiting for a free worker"
     else:
         headline = "A worker is picking this up"
-    return {"state": st["state"], "headline": headline, "detail": st["message"], "ahead": n, "waitingSeconds": _age(created_at),
+    detail = st["message"]
+    if st["state"] in ("none", "offline") and config.INLINE_RUNS and not inline_ok:
+        detail = ("This run is too large for the site itself (full analyses and real-data runs). It starts when a worker is connected: "
+                  "`python -m app.worker` with this deployment's DATABASE_URL.")
+    return {"state": st["state"], "headline": headline, "detail": detail, "ahead": n, "waitingSeconds": _age(created_at),
             "warnings": st["warnings"]}
 
 
